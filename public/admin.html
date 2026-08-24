@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Star Test Quest — Admin</title>
+
+    <link
+        rel="stylesheet"
+        href="/css/admin.css"
+    >
+
+</head>
+
+<body>
+
+    <main class="admin">
+
+        <header class="admin-header">
+
+            <h1>
+                STAR TEST QUEST
+            </h1>
+
+            <p>
+                Панель администратора
+            </p>
+
+        </header>
+
+
+        <!-- ================================= -->
+        <!-- CREATE GAME -->
+        <!-- ================================= -->
+
+        <section
+            id="createGameSection"
+            class="panel"
+        >
+
+            <h2>
+                Создание игры
+            </h2>
+
+            <button
+                id="createGameButton"
+                class="primary-button"
+            >
+                СОЗДАТЬ ИГРУ
+            </button>
+
+        </section>
+
+
+        <!-- ================================= -->
+        <!-- GAME INFO -->
+        <!-- ================================= -->
+
+        <section
+            id="gameSection"
+            class="panel hidden"
+        >
+
+        <div class="game-code">
+
+            <span>
+                Код игры
+            </span>
+        
+            <strong id="gameCode">
+                -----
+            </strong>
+        
+            <span class="lobby-label">
+                Ссылка для игроков
+            </span>
+        
+            <div class="lobby-link-row">
+        
+                <input
+                    id="lobbyLink"
+                    type="text"
+                    readonly
+                >
+        
+                <button
+                    id="copyLobbyLinkButton"
+                    class="copy-button"
+                >
+                    КОПИРОВАТЬ
+                </button>
+        
+            </div>
+        
+            <div
+                id="copyStatus"
+                class="copy-status"
+            ></div>
+        
+        </div>
+
+
+            <div class="player-count">
+
+                Игроков:
+
+                <strong id="playerCount">
+                    0
+                </strong>
+
+            </div>
+
+
+            <!-- ============================= -->
+            <!-- TEAMS -->
+            <!-- ============================= -->
+
+            <div class="teams">
+
+                <div class="team-card">
+
+                    <div class="team-card-icon">
+                        🧠
+                    </div>
+
+                    <div class="team-card-name">
+                        Стратеги
+                    </div>
+
+                    <div
+                        id="strategistCount"
+                        class="team-card-count"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="team-card">
+
+                    <div class="team-card-icon">
+                        😎
+                    </div>
+
+                    <div class="team-card-name">
+                        Шутники
+                    </div>
+
+                    <div
+                        id="jokerCount"
+                        class="team-card-count"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="team-card">
+
+                    <div class="team-card-icon">
+                        🔎
+                    </div>
+
+                    <div class="team-card-name">
+                        Критики
+                    </div>
+
+                    <div
+                        id="criticCount"
+                        class="team-card-count"
+                    >
+                        0
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ============================= -->
+            <!-- STATUS -->
+            <!-- ============================= -->
+
+            <div
+                id="adminStatus"
+                class="admin-status"
+            >
+                Ожидаем игроков...
+            </div>
+
+
+            <!-- ============================= -->
+            <!-- PLAYERS -->
+            <!-- ============================= -->
+
+            <h2>
+                Игроки
+            </h2>
+
+            <div
+                id="playerList"
+                class="player-list"
+            ></div>
+
+
+            <!-- ============================= -->
+            <!-- START -->
+            <!-- ============================= -->
+
+            <button
+                id="startGameButton"
+                class="start-button"
+                disabled
+            >
+                🚀 НАЧАТЬ ИГРУ
+            </button>
+
+        </section>
+
+
+    </main>
+
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script src="/js/admin.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "testingbday",
+  "version": "1.0.0",
+  "description": "Synchronous browser quest for QA team",
+  "main": "index.js",
+  "scripts": {
+  "dev": "nodemon server.js",
+  "start": "node server.js"
+},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

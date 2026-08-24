@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Star Test Quest</title>
+
+    <link rel="stylesheet" href="/css/style.css">
+
+</head>
+
+<body>
+
+    <main class="game">
+
+        <!-- ========================================= -->
+        <!-- JOIN SCREEN -->
+        <!-- ========================================= -->
+
+        <div id="voiceToggle">
+            🔊 Озвучка: ВКЛ
+        </div>
+
+        <section id="joinScreen">
+
+            <h1>Тестовые войны: Империя багов</h1>
+
+            <p>
+                Давным-давно, в одной далёкой галактике... Корпорация "Империя Продакшена" готовит к запуску глобальное обновление прошивки для всех умных устройств — релиз 4.2. <br>Но Повстанческий Альянс Тестирования узнал страшную правду: в коде есть уязвимость. Империя утверждает, что релиз готов. Но Сила подсказывает: что-то здесь не так. Очень не так. <br>Вы — экипаж «Тысячелетнего Сокола» (коворкинг на 1 этаже). Не группа одиночек, а единая команда. Только вместе вы сможете найти баг, спасти релиз и доказать, что Империя не непобедима!
+            </p>
+
+            <audio
+                id="welcomeVoice"
+                src="/assets/sounds/Scene1_welcome_voice_1.2.wav"
+                preload="auto"
+            ></audio>
+
+            <audio
+                id="teamVoice"
+                src="/assets/sounds/Scene2_Yoda_choice.wav"
+                preload="auto">
+            </audio>
+
+            <input
+                id="nickname"
+                type="text"
+                maxlength="30"
+                placeholder="Ваш никнейм"
+            >
+
+            <button id="joinButton">
+                Присоединиться
+            </button>
+
+            <p
+                id="error"
+                class="error"
+            ></p>
+
+        </section>
+
+
+        <!-- ========================================= -->
+        <!-- LOBBY SCREEN -->
+        <!-- ========================================= -->
+
+        <section
+            id="lobbyScreen"
+            class="hidden"
+        >
+
+            <h1>Добро пожаловать!</h1>
+
+            <h2>
+                <span id="playerNickname"></span>
+            </h2>
+
+            <p>
+                Ты присоединился к экипажу.
+            </p>
+
+            <p>
+                Игроков в комнате:
+                <strong id="lobbyPlayerCount">0</strong>
+            </p>
+
+            <p>
+                Сейчас начинается подготовка к миссии...
+            </p>
+
+        </section>
+
+
+        <!-- ========================================= -->
+        <!-- TEAM SCREEN -->
+        <!-- ========================================= -->
+
+        <section
+    id="teamScreen"
+    class="hidden"
+>
+
+    <h1>Выбери свой путь</h1>
+
+    <p class="yoda-text">
+        «Собрал вас я здесь. Не случайно. Каждый из вас — важная часть экипажа. 
+        <br> Но разные вы. По-разному мыслите вы. Выбирайте путь свой».
+    </p>
+
+    <div class="team-buttons">
+
+        <button
+            class="team-button"
+            data-team="strategist"
+        >
+            <div class="team-icon">🧠</div>
+
+            <div class="team-name">
+                Стратеги
+            </div>
+
+            <div class="team-description">
+                Я мыслю логически.
+                Каждый баг должен быть
+                задокументирован.
+            </div>
+
+            <div class="team-select">
+                ВЫБРАТЬ КОМАНДУ
+            </div>
+        </button>
+
+
+        <button
+            class="team-button"
+            data-team="joker"
+        >
+            <div class="team-icon">😎</div>
+
+            <div class="team-name">
+                Шутники
+            </div>
+
+            <div class="team-description">
+                Жизнь слишком коротка,
+                чтобы быть серьёзным.
+                Погнали веселиться!
+            </div>
+
+            <div class="team-select">
+                ВЫБРАТЬ КОМАНДУ
+            </div>
+        </button>
+
+
+        <button
+            class="team-button"
+            data-team="critic"
+        >
+            <div class="team-icon">🔎</div>
+
+            <div class="team-name">
+                Критики
+            </div>
+
+            <div class="team-description">
+                Я вижу все недостатки
+                этого кода.
+                И я не боюсь об этом говорить.
+            </div>
+
+            <div class="team-select">
+                ВЫБРАТЬ КОМАНДУ
+            </div>
+        </button>
+
+    </div>
+
+    <p
+        id="teamStatus"
+        class="status"
+    ></p>
+
+</section>
+<section
+    id="waitingScreen"
+    class="hidden"
+>
+
+    <h1>Ты в команде!</h1>
+
+    <p id="selectedTeamText"></p>
+
+    <p>
+        Ждём запуска игры администратором...
+    </p>
+
+    <div class="loader">
+        ✦
+    </div>
+
+</section>
+
+    <!-- ========================================= -->
+    <!-- ПЕРЕХОД МЕЖДУ СЦЕНАМИ -->
+    <!-- ========================================= -->
+
+    <div
+        id="sceneTransition"
+        class="scene-transition hidden"
+    >
+
+        <div class="scene-transition-content">
+
+            <div
+                id="sceneTransitionTitle"
+                class="scene-transition-title"
+            >
+                ВЫБОР СДЕЛАН
+            </div>
+
+            <div
+                id="sceneTransitionText"
+                class="scene-transition-text"
+            ></div>
+
+            <div
+                id="sceneTransitionNext"
+                class="scene-transition-next"
+            ></div>
+
+        </div>
+
+    </div>
+
+
+<!-- ==================================================
+     GAME SCREEN
+================================================== -->
+
+<div id="gameScreen" class="game-screen hidden">
+
+    <!-- ========================================= -->
+    <!-- ФОН -->
+    <!-- ========================================= -->
+
+    <div
+        id="gameBackground"
+        class="game-background"
+    ></div>
+
+
+    <!-- ========================================= -->
+    <!-- ПЕРСОНАЖИ -->
+    <!-- ========================================= -->
+
+    <div
+        id="charactersLayer"
+        class="characters-layer"
+    >
+
+        <!-- JavaScript добавляет сюда персонажей -->
+
+    </div>
+
+
+    <!-- ========================================= -->
+    <!-- НИЖНЯЯ ПАНЕЛЬ -->
+    <!-- ========================================= -->
+
+    <div
+        id="dialoguePanel"
+        class="dialogue-panel"
+    >
+
+        <div
+            id="characterName"
+            class="character-name"
+        ></div>
+
+
+        <div
+            id="dialogueText"
+            class="dialogue-text"
+        ></div>
+
+
+        <div
+            id="choiceButtons"
+            class="choice-buttons"
+        ></div>
+
+    </div>
+
+</div>
+
+<!-- ========================================= -->
+<!-- KICKED SCREEN -->
+<!-- ========================================= -->
+
+<section
+    id="kickedScreen"
+    class="hidden"
+>
+
+    <h1>Ты исключён из экипажа</h1>
+
+    <p id="kickedMessage">
+        Администратор удалил тебя из игры.
+    </p>
+
+    <button id="returnToStartButton">
+        ВЕРНУТЬСЯ
+    </button>
+
+</section>
+
+    </main>
+
+
+    <!-- Socket.io -->
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <!-- Наш JavaScript -->
+
+    <script src="/js/app.js"></script>
+
+</body>
+
+</html>
