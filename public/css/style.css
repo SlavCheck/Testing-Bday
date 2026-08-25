@@ -630,32 +630,6 @@ button:disabled {
 
 }
 
-#voiceToggle {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-
-    z-index: 9999;
-
-    padding: 10px 14px;
-
-    background: rgba(0, 0, 0, 0.75);
-    color: white;
-
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 8px;
-
-    cursor: pointer;
-
-    font-size: 14px;
-
-    user-select: none;
-}
-
-#voiceToggle:hover {
-    background: rgba(0, 0, 0, 0.9);
-}
-
 /* ==================================================
    SCENE TRANSITION
    ================================================== */
@@ -1859,3 +1833,543 @@ button:disabled {
 
         box-shadow: none;
     }
+
+    /* ==================================================
+   BUG SEARCH
+================================================== */
+
+.bug-search {
+    position: absolute;
+
+    left: 50%;
+    top: 45%;
+
+    transform: translate(-50%, -50%);
+
+    width: min(1000px, 90vw);
+
+    z-index: 20;
+}
+
+/* Заголовок */
+
+.bug-search-header {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    margin-bottom: 18px;
+}
+
+/* ==================================================
+   BUG SEARCH — FULL SCREEN MINI GAME
+================================================== */
+
+.bug-search {
+    position: absolute;
+
+    left: 50%;
+    top: 50%;
+
+    transform: translate(-50%, -50%);
+
+    width: min(1100px, 92vw);
+    height: min(88vh, 850px);
+
+    z-index: 20;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+
+    box-sizing: border-box;
+}
+
+
+/* ==================================================
+   HEADER
+================================================== */
+
+.bug-search-header {
+    width: 100%;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-bottom: 8px;
+}
+
+#bugSearchTitle {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+#bugSearchTimer {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+
+/* ==================================================
+   PROGRESS
+================================================== */
+
+.bug-search-progress {
+    font-size: 18px;
+
+    margin-bottom: 12px;
+
+    opacity: 0.9;
+}
+
+
+/* ==================================================
+   IMAGE
+================================================== */
+
+.bug-search-image-container {
+    flex: 1;
+
+    width: 100%;
+
+    min-height: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+}
+
+
+.bug-search-image {
+    display: block;
+
+    width: auto;
+    height: 100%;
+
+    max-width: 90%;
+    max-height: 100%;
+
+    object-fit: contain;
+
+    object-position: center;
+
+    user-select: none;
+
+    pointer-events: none;
+
+    transition:
+        opacity 0.25s ease,
+        transform 0.25s ease;
+}
+
+
+/* ==================================================
+   STATUS
+================================================== */
+
+.bug-search-status {
+    min-height: 32px;
+
+    margin: 12px 0;
+
+    font-size: 20px;
+
+    text-align: center;
+}
+
+
+/* ==================================================
+   BUTTONS
+================================================== */
+
+.bug-search-actions {
+    display: flex;
+
+    gap: 20px;
+
+    width: 100%;
+
+    justify-content: center;
+}
+
+
+.bug-search-button {
+    width: 260px;
+
+    min-height: 65px;
+
+    padding: 12px 20px;
+
+    border: none;
+
+    border-radius: 14px;
+
+    font-size: 20px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.15s ease,
+        opacity 0.15s ease;
+}
+
+
+.bug-search-button:hover:not(:disabled) {
+    transform: scale(1.04);
+}
+
+
+.bug-search-button:disabled {
+    opacity: 0.45;
+
+    cursor: default;
+}
+
+@media (max-width: 700px) {
+
+    .bug-search {
+        width: 94vw;
+        height: 85vh;
+    }
+
+
+    #bugSearchTitle,
+    #bugSearchTimer {
+        font-size: 22px;
+    }
+
+
+    .bug-search-image {
+        max-width: 96%;
+    }
+
+
+    .bug-search-actions {
+        gap: 10px;
+    }
+
+
+    .bug-search-button {
+        width: 48%;
+
+        min-height: 58px;
+
+        font-size: 16px;
+    }
+
+}
+
+.top-controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    z-index: 9999;
+}
+
+.bug-search-timer-fixed {
+    min-width: 70px;
+
+    padding: 8px 14px;
+
+    border-radius: 10px;
+
+    background: rgba(0, 0, 0, 0.75);
+
+    color: white;
+
+    font-size: 20px;
+    font-weight: 700;
+
+    text-align: center;
+
+    font-variant-numeric: tabular-nums;
+
+    box-sizing: border-box;
+}
+
+.bug-search-timer-fixed.hidden {
+    display: none;
+}
+
+/* =========================================
+   ТАЙМЕР + ОЗВУЧКА
+========================================= */
+
+.top-right-controls {
+    position: fixed;
+
+    top: 20px;
+    right: 20px;
+
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    z-index: 99999;
+}
+
+/* Таймер */
+
+#sceneTimer {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    min-width: 80px;
+    height: 42px;
+
+    padding: 8px 14px;
+
+    border-radius: 10px;
+
+    background: rgba(0, 0, 0, 0.7);
+
+    color: white;
+
+    font-size: 18px;
+    font-weight: bold;
+
+    line-height: 1;
+
+    text-align: center;
+    white-space: nowrap;
+
+    backdrop-filter: blur(6px);
+}
+
+/* Кнопка озвучки */
+
+#voiceToggle {
+    position: relative;
+
+    flex: 0 0 auto;
+
+    min-width: 150px;
+    height: 42px;
+
+    margin: 0;
+    padding: 10px 14px;
+
+    box-sizing: border-box;
+
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    font-size: 14px;
+    font-weight: bold;
+
+    user-select: none;
+}
+
+#voiceToggle:hover {
+    background: rgba(0, 0, 0, 0.9);
+}
+
+/* =========================================
+   ВЫБРАННАЯ КОМАНДА
+========================================= */
+
+#teamScreen .team-button:disabled {
+    opacity: 1;
+
+    border-color: #ffffff;
+
+    background:
+        linear-gradient(
+            145deg,
+            #2d3a52,
+            #182235
+        );
+
+    box-shadow:
+        0 0 0 3px rgba(255, 255, 255, 0.15),
+        0 0 25px rgba(255, 255, 255, 0.2);
+
+    transform: none;
+}
+
+#teamScreen .team-button:disabled .team-select {
+    background: white;
+    color: #10131b;
+    border-color: white;
+}
+
+/* =========================================
+   КНОПКИ ПОИСКА БАГОВ
+========================================= */
+
+.bug-button {
+    background: #c62828;
+    color: white;
+
+    border: 2px solid #ef5350;
+
+    box-shadow:
+        0 4px 15px rgba(198, 40, 40, 0.35);
+}
+
+.bug-button:hover:not(:disabled) {
+    background: #e53935;
+
+    border-color: #ff6b6b;
+
+    box-shadow:
+        0 6px 22px rgba(229, 57, 53, 0.5);
+}
+
+
+.normal-button {
+    background: #2e7d32;
+    color: white;
+
+    border: 2px solid #66bb6a;
+
+    box-shadow:
+        0 4px 15px rgba(46, 125, 50, 0.35);
+}
+
+.normal-button:hover:not(:disabled) {
+    background: #43a047;
+
+    border-color: #81c784;
+
+    box-shadow:
+        0 6px 22px rgba(67, 160, 71, 0.5);
+}
+
+/* =========================================
+   ВЫБРАННЫЙ ВАРИАНТ ДИАЛОГА
+========================================= */
+
+.choice-buttons button.selected {
+    border: 2px solid #ffffff;
+
+    background:
+        linear-gradient(
+            145deg,
+            #3a465d,
+            #202a3c
+        );
+
+    color: white;
+
+    box-shadow:
+        0 0 0 3px rgba(255, 255, 255, 0.12),
+        0 0 25px rgba(255, 255, 255, 0.18);
+
+    transform: none;
+
+    opacity: 1;
+}
+
+
+/* Остальные варианты после выбора */
+
+.choice-buttons button:disabled:not(.selected) {
+    opacity: 0.35;
+}
+
+
+/* Выбранная команда */
+
+#teamScreen .team-button.selected {
+    border-color: #ffffff;
+
+    background:
+        linear-gradient(
+            145deg,
+            #303d55,
+            #171f2f
+        );
+
+    box-shadow:
+        0 0 0 3px rgba(255, 255, 255, 0.15),
+        0 0 30px rgba(255, 255, 255, 0.2);
+
+    opacity: 1;
+}
+
+#teamScreen .team-button.selected .team-select {
+    background: white;
+    color: #10131b;
+    border-color: white;
+}
+
+#bugButton {
+    background: #d9534f;
+    color: white;
+    border: 2px solid #b52b27;
+}
+
+#bugButton:hover:not(:disabled) {
+    background: #c9302c;
+}
+
+#normalButton {
+    background: #4caf50;
+    color: white;
+    border: 2px solid #368c3a;
+}
+
+#normalButton:hover:not(:disabled) {
+    background: #3f9142;
+}
+
+#bugButton.selected {
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9),
+                0 0 20px rgba(217, 83, 79, 0.8);
+
+    transform: scale(1.04);
+}
+
+#normalButton.selected {
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.9),
+                0 0 20px rgba(76, 175, 80, 0.8);
+
+    transform: scale(1.04);
+}
+
+.game-choice-button.selected,
+.team-button.selected {
+    transform: scale(1.03);
+
+    box-shadow:
+        0 0 0 3px rgba(255, 255, 255, 0.95),
+        0 0 18px rgba(255, 255, 255, 0.55);
+
+    filter: brightness(1.15);
+}
+
+.game-choice-button,
+.team-button,
+#bugButton,
+#normalButton {
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease,
+        filter 0.15s ease;
+}

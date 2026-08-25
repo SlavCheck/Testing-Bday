@@ -24,8 +24,16 @@
         <!-- JOIN SCREEN -->
         <!-- ========================================= -->
 
-        <div id="voiceToggle">
-            🔊 Озвучка: ВКЛ
+        <div class="top-right-controls">
+
+            <div id="sceneTimer">
+                ⏱ 0:00
+            </div>
+        
+            <button id="voiceToggle">
+                🔊 Озвучка: ВКЛ
+            </button>
+        
         </div>
 
         <section id="joinScreen">
@@ -270,6 +278,67 @@
 
     </div>
 
+    <div
+    id="bugSearch"
+    class="bug-search hidden"
+>
+
+    <div class="bug-search-header">
+
+        <div id="bugSearchTitle">
+            ПОИСК БАГОВ
+        </div>
+
+    </div>
+
+
+    <div class="bug-search-progress">
+        Предмет <span id="bugSearchCurrent">1</span>
+        из
+        <span id="bugSearchTotal">6</span>
+    </div>
+
+
+    <div class="bug-search-image-container">
+
+        <img
+            id="bugSearchImage"
+            class="bug-search-image"
+            src=""
+            alt=""
+            draggable="false"
+        >
+
+    </div>
+
+
+    <div
+        id="bugSearchStatus"
+        class="bug-search-status"
+    >
+        Внимательно осмотри предмет.
+    </div>
+
+
+    <div class="bug-search-actions">
+
+        <button
+            id="bugButton"
+            class="bug-search-button bug-button"
+        >
+            🐞 ЭТО БАГ
+        </button>
+
+        <button
+            id="normalButton"
+            class="bug-search-button normal-button"
+        >
+            ✓ ВСЁ НОРМАЛЬНО
+        </button>
+
+    </div>
+
+</div>
 
     <!-- ========================================= -->
     <!-- НИЖНЯЯ ПАНЕЛЬ -->

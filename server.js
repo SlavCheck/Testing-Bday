@@ -32,6 +32,67 @@ const games = new Map();
 // HELPERS
 // --------------------------------------------------
 
+function startSceneTimer(game, duration) {
+
+    if (!duration) {
+        game.sceneTimer = null;
+        return;
+    }
+
+    // Отменяем предыдущий таймер
+    if (game.sceneTimerTimeout) {
+        clearTimeout(game.sceneTimerTimeout);
+    }
+
+    const endsAt =
+        Date.now() + duration * 1000;
+
+    game.sceneTimer = {
+        duration,
+        endsAt
+    };
+
+    io.to(`game_${game.id}`).emit(
+        "scene:timer",
+        {
+            duration,
+            endsAt
+        }
+    );
+
+    game.sceneTimerTimeout =
+        setTimeout(() => {
+
+            // Если за это время сцена уже сменилась —
+            // ничего не делаем
+            if (
+                !game.currentScene ||
+                !game.sceneTimer ||
+                game.sceneTimer.endsAt !== endsAt
+            ) {
+                return;
+            }
+
+            console.log(
+                `Таймер сцены "${game.currentScene.id}" закончился`
+            );
+
+            game.sceneTimer = null;
+
+            // Если активно голосование,
+            // его таймер сам завершит голосование.
+            if (
+                game.voting &&
+                game.voting.active
+            ) {
+                return;
+            }
+
+            moveToNextScene(game);
+
+        }, duration * 1000);
+}
+
 function generateGameCode() {
 
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -237,6 +298,10 @@ function awardVotingPoints(game, scene, winner) {
  */
 function moveToNextScene(game) {
 
+    if (game.sceneTimerTimeout) {
+        clearTimeout(game.sceneTimerTimeout);
+        game.sceneTimerTimeout = null;
+    }
     // --------------------------------------------------
     // ОПРЕДЕЛЯЕМ СЛЕДУЮЩУЮ СЦЕНУ
     // --------------------------------------------------
@@ -327,7 +392,38 @@ function moveToNextScene(game) {
     game.currentScene =
         nextScene;
 
+    // ==================================================
+    // ТАЙМЕР СЦЕНЫ
+    // ==================================================
+    const sceneDuration =
+        nextScene.duration || 30;
 
+    startSceneTimer(
+        game,
+        sceneDuration
+    );
+
+        if (nextScene.type === "bug_search") {
+
+            for (const player of game.players.values()) {
+        
+                player.sceneState = {
+        
+                    foundBugs: [],
+        
+                    mistakes: 0,
+        
+                    answeredCards: [],
+
+                    status: "playing"
+
+                    
+        
+                };
+        
+            }
+        
+        }
     // --------------------------------------------------
     // ОЧИЩАЕМ ПРЕДЫДУЩИЙ ПЕРЕХОД
     // --------------------------------------------------
@@ -378,11 +474,10 @@ function moveToNextScene(game) {
     ).emit(
         "game:started",
         {
-            scene:
-                nextScene
+            scene: nextScene,
+            timer: game.sceneTimer
         }
     );
-
 
     // --------------------------------------------------
     // ЗАПУСКАЕМ ГОЛОСОВАНИЕ
@@ -431,25 +526,25 @@ function finishSceneVoting(game, scene) {
 
     // --------------------- никто не проголосовал ---------------------
     if (Object.keys(voteCounts).length === 0) {
+
         console.log("Никто не проголосовал.");
+    
         io.to(`game_${game.id}`).emit(
             "voting:finished",
             {
                 voteCounts,
-                winner,
+                winner: null,
                 tie: false
             }
         );
-        
-        
+    
         setTimeout(
             () => {
-        
                 moveToNextScene(game);
-        
             },
             4000
-        );              // переход, если сцена без голосования
+        );
+    
         return;
     }
 
@@ -495,28 +590,64 @@ function finishSceneVoting(game, scene) {
         }
 
         // revote НЕ предусмотрен (или уже второй раунд) – выбираем случайного победителя
-        const randomWinner = winners[Math.floor(Math.random() * winners.length)];
-        console.log(`Повторный раунд без revote – случайный победитель: ${randomWinner}`);
+        // revote НЕ предусмотрен — выбираем случайного победителя
+        const randomWinner =
+        winners[Math.floor(Math.random() * winners.length)];
 
-        awardVotingPoints(game, scene, randomWinner);
-        io.to(`game_${game.id}`).emit(
-            "voting:finished",
-            {
-                voteCounts,
-                winner,
-                tie: false
-            }
+        console.log(
+        `Случайный победитель: ${randomWinner}`
         );
-        
-        
+
+        awardVotingPoints(
+        game,
+        scene,
+        randomWinner
+        );
+
+        // Сохраняем ветвление
+        const randomWinningChoice =
+        scene.choices.find(
+            choice =>
+                choice.id === randomWinner
+        );
+
+        if (
+        randomWinningChoice &&
+        randomWinningChoice.nextSceneId
+        ) {
+
+        game.nextSceneId =
+            randomWinningChoice.nextSceneId;
+
+        } else if (scene.nextSceneId) {
+
+        game.nextSceneId =
+            scene.nextSceneId;
+
+        } else {
+
+        delete game.nextSceneId;
+        }
+
+        io.to(
+        `game_${game.id}`
+        ).emit(
+        "voting:finished",
+        {
+            voteCounts,
+            winner: randomWinner,
+            winnerChoice: randomWinningChoice,
+            tie: true
+        }
+        );
+
         setTimeout(
-            () => {
-        
-                moveToNextScene(game);
-        
-            },
-            5000
+        () => {
+            moveToNextScene(game);
+        },
+        5000
         );
+
         return;
     }
 
@@ -587,6 +718,335 @@ io.on("connection", (socket) => {
     );
 
 
+    socket.on(
+        "bugsearch:card_selected",
+        ({ cardId, answer }) => {
+    
+            if (!socket.gameId) {
+                return;
+            }
+    
+            const game =
+                games.get(socket.gameId);
+    
+            if (!game) {
+                return;
+            }
+    
+            const scene =
+                game.currentScene;
+    
+            if (
+                !scene ||
+                scene.type !== "bug_search"
+            ) {
+                return;
+            }
+    
+            const player =
+                [...game.players.values()]
+                    .find(
+                        player =>
+                            player.socketId === socket.id
+                    );
+    
+            if (!player) {
+                return;
+            }
+    
+            // ------------------------------------------
+            // ПРОВЕРЯЕМ СОСТОЯНИЕ ИГРОКА
+            // ------------------------------------------
+    
+            if (
+                !player.sceneState ||
+                player.sceneState.status !== "playing"
+            ) {
+                return;
+            }
+    
+            // ------------------------------------------
+            // ПРОВЕРЯЕМ ОТВЕТ
+            // ------------------------------------------
+    
+            if (
+                answer !== "bug" &&
+                answer !== "no_bug"
+            ) {
+                console.log(
+                    `Некорректный ответ игрока: ${answer}`
+                );
+    
+                return;
+            }
+    
+            // ------------------------------------------
+            // ИЩЕМ КАРТОЧКУ
+            // ------------------------------------------
+    
+            const card =
+                scene.cards.find(
+                    card =>
+                        card.id === cardId
+                );
+    
+            if (!card) {
+                return;
+            }
+    
+            // ------------------------------------------
+            // ПРОВЕРЯЕМ, НЕ ОТВЕЧАЛ ЛИ УЖЕ
+            // ------------------------------------------
+    
+            if (
+                player.sceneState.answeredCards &&
+                player.sceneState.answeredCards.includes(cardId)
+            ) {
+                return;
+            }
+    
+            // ------------------------------------------
+            // СОЗДАЁМ МАССИВ ОТВЕЧЕННЫХ КАРТОЧЕК
+            // ------------------------------------------
+    
+            if (!player.sceneState.answeredCards) {
+    
+                player.sceneState.answeredCards = [];
+    
+            }
+    
+            player.sceneState.answeredCards.push(
+                cardId
+            );
+    
+            // ------------------------------------------
+            // ОПРЕДЕЛЯЕМ, ЕСТЬ ЛИ НА КАРТОЧКЕ БАГ
+            // ------------------------------------------
+    
+            const isBug =
+                scene.bugs.includes(cardId);
+    
+            // Правильность ответа:
+            //
+            // bug + есть баг       = правильно
+            // no_bug + нет бага    = правильно
+            //
+    
+            const correct =
+                (
+                    answer === "bug" &&
+                    isBug
+                ) ||
+                (
+                    answer === "no_bug" &&
+                    !isBug
+                );
+    
+            console.log(
+                `Игрок ${player.nickname}: ` +
+                `${cardId} | ` +
+                `ответ: ${answer} | ` +
+                `баг: ${isBug} | ` +
+                `правильно: ${correct}`
+            );
+    
+            // ==================================================
+            // НЕПРАВИЛЬНЫЙ ОТВЕТ
+            // ==================================================
+    
+            if (!correct) {
+    
+                player.sceneState.mistakes++;
+    
+                console.log(
+                    `Игрок ${player.nickname}: ` +
+                    `ошибка ${player.sceneState.mistakes}/2`
+                );
+    
+                // ------------------------------------------
+                // ВТОРАЯ ОШИБКА
+                // ------------------------------------------
+    
+                if (
+                    player.sceneState.mistakes >= 2
+                ) {
+    
+                    player.sceneState.status =
+                        "lost";
+    
+                    socket.emit(
+                        "bugsearch:result",
+                        {
+                            cardId,
+    
+                            answer,
+    
+                            correct: false,
+    
+                            found:
+                                player.sceneState.foundBugs.length,
+    
+                            totalBugs:
+                                scene.bugs.length,
+    
+                            mistakes:
+                                player.sceneState.mistakes,
+    
+                            finished: true,
+    
+                            result: "lose",
+    
+                            points: 0
+                        }
+                    );
+    
+                    console.log(
+                        `Игрок ${player.nickname} ` +
+                        `проиграл bug_search`
+                    );
+    
+                    return;
+                }
+    
+                // ------------------------------------------
+                // ПЕРВАЯ ОШИБКА
+                // ------------------------------------------
+    
+                socket.emit(
+                    "bugsearch:result",
+                    {
+                        cardId,
+    
+                        answer,
+    
+                        correct: false,
+    
+                        found:
+                            player.sceneState.foundBugs.length,
+    
+                        totalBugs:
+                            scene.bugs.length,
+    
+                        mistakes:
+                            player.sceneState.mistakes,
+    
+                        finished: false,
+    
+                        result: null,
+    
+                        points: 0
+                    }
+                );
+    
+                return;
+            }
+    
+            // ==================================================
+            // ПРАВИЛЬНЫЙ ОТВЕТ
+            // ==================================================
+    
+            console.log(
+                `Игрок ${player.nickname}: ` +
+                `правильно ответил по ${cardId}`
+            );
+    
+            // ------------------------------------------
+            // ЕСЛИ ЭТО БАГ — ДОБАВЛЯЕМ В НАЙДЕННЫЕ
+            // ------------------------------------------
+    
+            if (isBug) {
+    
+                player.sceneState.foundBugs.push(
+                    cardId
+                );
+    
+            }
+    
+            const found =
+                player.sceneState.foundBugs.length;
+    
+            const totalBugs =
+                scene.bugs.length;
+    
+            // ------------------------------------------
+            // ВСЕ БАГИ НАЙДЕНЫ
+            // ------------------------------------------
+    
+            if (
+                found >= totalBugs
+            ) {
+    
+                player.sceneState.status =
+                    "won";
+    
+                const points =
+                    scene.points || 0;
+    
+                player.score += points;
+    
+                console.log(
+                    `Игрок ${player.nickname} ` +
+                    `нашёл ВСЕ БАГИ. ` +
+                    `+${points} очков`
+                );
+    
+                socket.emit(
+                    "bugsearch:result",
+                    {
+                        cardId,
+    
+                        answer,
+    
+                        correct: true,
+    
+                        found,
+    
+                        totalBugs,
+    
+                        mistakes:
+                            player.sceneState.mistakes,
+    
+                        finished: true,
+    
+                        result: "win",
+    
+                        points
+                    }
+                );
+    
+                return;
+            }
+    
+            // ------------------------------------------
+            // ПРАВИЛЬНЫЙ ОТВЕТ, НО ИГРА ПРОДОЛЖАЕТСЯ
+            // ------------------------------------------
+    
+            socket.emit(
+                "bugsearch:result",
+                {
+                    cardId,
+    
+                    answer,
+    
+                    correct: true,
+    
+                    found,
+    
+                    totalBugs,
+    
+                    mistakes:
+                        player.sceneState.mistakes,
+    
+                    finished: false,
+    
+                    result: null,
+    
+                    points: 0
+                }
+            );
+    
+        }
+    );
     // ==================================================
     // ADMIN: CREATE GAME
     // ==================================================
@@ -598,19 +1058,23 @@ io.on("connection", (socket) => {
             const gameId =
                 generateGameCode();
 
-            const game = {
+                const game = {
 
-                id: gameId,
-
-                status: "lobby",
-
-                currentScene: null,
-
-                players: new Map(),
+                    id: gameId,
                 
-                kickedPlayers: new Set()
-
-            };
+                    status: "lobby",
+                
+                    currentScene: null,
+                
+                    sceneTimer: null,
+                
+                    sceneTimerTimeout: null,
+                
+                    players: new Map(),
+                
+                    kickedPlayers: new Set()
+                
+                };
 
             games.set(
                 gameId,
@@ -882,6 +1346,8 @@ io.on("connection", (socket) => {
                 
                 currentChoice:
                     null,
+
+                sceneState: null,
     
                 kicked:
                     false    
@@ -1157,7 +1623,7 @@ socket.on(
         }
 
 
-        // ------------------------------------------
+       // ------------------------------------------
         // СОХРАНЯЕМ / ОБНОВЛЯЕМ ВЫБОР
         // ------------------------------------------
 
@@ -1166,28 +1632,13 @@ socket.on(
             choiceId
         );
 
-
-        // Сохраняем последний выбор игрока
-
         player.currentChoice =
             choiceId;
 
-        if (
-            game.voting &&
-            game.voting.active
-            ) {
-         
-            game.voting.choices.set(
-                   player.id,
-                   choiceId
+                console.log(
+                    `Игрок ${player.nickname} ` +
+                    `выбрал вариант: ${choiceId}`
                 );
-            
-            }
-
-        console.log(
-            `Игрок ${player.nickname} ` +
-            `выбрал вариант: ${choiceId}`
-        );
 
 
         // ------------------------------------------
@@ -1298,7 +1749,13 @@ socket.on(
             broadcastLobbyUpdate(game);
 
 
-            game.currentScene = introScene;
+            game.currentScene =
+                introScene;
+
+            startSceneTimer(
+                game,
+                introScene.duration || 30
+            );
 
             game.voting = {
                 active: false,
@@ -1318,7 +1775,8 @@ socket.on(
             ).emit(
                 "game:started",
                 {
-                    scene: introScene
+                    scene: introScene,
+                    timer: game.sceneTimer
                 }
             );
 

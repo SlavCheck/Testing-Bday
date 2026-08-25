@@ -8,7 +8,12 @@ let voiceEnabled =
     localStorage.getItem("starTestQuest_voiceEnabled") !== "false";
 let currentScene = null;
 let currentVoice = null;
-
+let bugSearchState = {
+    mistakes: 0,
+    found: 0,
+    finished: false,
+    cards: []
+};
 
 function playVoice(src) {
 
@@ -107,6 +112,26 @@ document.addEventListener(
 // ==================================================
 // ELEMENTS
 // ==================================================
+const sceneTimer =
+    document.getElementById("sceneTimer");
+
+const dialoguePanel =
+    document.getElementById("dialoguePanel");
+
+const bugSearch =
+    document.getElementById("bugSearch");
+
+const bugCards =
+    document.getElementById("bugCards");
+
+const bugSearchTitle =
+    document.getElementById("bugSearchTitle");
+
+const bugSearchTimer =
+    document.getElementById("bugSearchTimer");
+
+const bugSearchStatus =
+    document.getElementById("bugSearchStatus");
 
 const sceneTransition =
     document.getElementById(
@@ -239,6 +264,93 @@ console.log(
 );
 
 // ==================================================
+// SCENE TIMER
+// ==================================================
+
+function stopSceneTimer() {
+
+    if (sceneTimerInterval) {
+
+        clearInterval(
+            sceneTimerInterval
+        );
+
+        sceneTimerInterval = null;
+
+    }
+
+}
+
+function updateSceneTimer(seconds) {
+
+    if (!sceneTimer) {
+        return;
+    }
+
+    seconds =
+        Math.max(
+            0,
+            Math.ceil(seconds)
+        );
+
+    const minutes =
+        Math.floor(seconds / 60);
+
+    const remainingSeconds =
+        seconds % 60;
+
+    sceneTimer.textContent =
+        `⏱ ${minutes}:${String(
+            remainingSeconds
+        ).padStart(2, "0")}`;
+
+}
+
+function startSceneTimer(endsAt) {
+
+    stopSceneTimer();
+
+    if (!endsAt) {
+
+        updateSceneTimer(0);
+
+        return;
+
+    }
+
+    function tick() {
+
+        const remaining =
+            Math.max(
+                0,
+                Math.ceil(
+                    (endsAt - Date.now()) / 1000
+                )
+            );
+
+        updateSceneTimer(
+            remaining
+        );
+
+        if (remaining <= 0) {
+
+            stopSceneTimer();
+
+        }
+
+    }
+
+    tick();
+
+    sceneTimerInterval =
+        setInterval(
+            tick,
+            250
+        );
+
+}
+
+// ==================================================
 // ShowTrasitionScene
 // ==================================================
 
@@ -269,6 +381,34 @@ function showSceneTransition({
     });
 }
 
+// ==================================================
+// MARK SELECTED BUTTON
+// ==================================================
+function markSelectedButton(button, containerSelector = null) {
+
+    if (!button) {
+        return;
+    }
+
+    const container =
+        containerSelector
+            ? button.closest(containerSelector)
+            : button.closest(
+                ".choice-buttons, .team-buttons"
+            );
+
+    if (!container) {
+        return;
+    }
+
+    container
+        .querySelectorAll("button")
+        .forEach(btn => {
+            btn.classList.remove("selected");
+        });
+
+    button.classList.add("selected");
+}
 
 // ==================================================
 // HideTrasitionScene
@@ -330,6 +470,408 @@ function transitionToScene(callback) {
 
     }, 600);
 
+}
+
+// ==================================================
+// RENDER BUG SEARCH
+// ==================================================
+function renderBugSearchScene(scene) {
+
+    console.log(
+        "Запускаем сцену поиска багов:",
+        scene
+    );
+
+    // Убираем персонажей предыдущей сцены
+    if (charactersLayer) {
+        charactersLayer.innerHTML = "";
+    }
+
+    if (characterName) {
+        characterName.textContent = "";
+    }
+
+    // ------------------------------------------
+    // СОСТОЯНИЕ
+    // ------------------------------------------
+
+    bugSearchState = {
+
+        mistakes: 0,
+
+        found: 0,
+
+        finished: false,
+
+        cards: scene.cards || [],
+
+        currentIndex: 0,
+
+        scene: scene
+
+    };
+
+
+    // ------------------------------------------
+    // ПОКАЗЫВАЕМ BUG SEARCH
+    // ------------------------------------------
+
+    const bugSearch =
+        document.getElementById(
+            "bugSearch"
+        );
+
+
+    if (!bugSearch) {
+
+        console.error(
+            "Не найден #bugSearch"
+        );
+
+        return;
+    }
+
+
+    bugSearch.classList.remove(
+        "hidden"
+    );
+
+
+    // ------------------------------------------
+    // СКРЫВАЕМ НИЖНЮЮ ПАНЕЛЬ
+    // ------------------------------------------
+
+    if (dialoguePanel) {
+
+        dialoguePanel.classList.add(
+            "hidden"
+        );
+
+    }
+
+
+    // ------------------------------------------
+    // ЭЛЕМЕНТЫ
+    // ------------------------------------------
+
+    const image =
+        document.getElementById(
+            "bugSearchImage"
+        );
+
+
+    const current =
+        document.getElementById(
+            "bugSearchCurrent"
+        );
+
+
+    const total =
+        document.getElementById(
+            "bugSearchTotal"
+        );
+
+
+    const status =
+        document.getElementById(
+            "bugSearchStatus"
+        );
+
+
+    const bugButton =
+        document.getElementById(
+            "bugButton"
+        );
+
+
+    const normalButton =
+        document.getElementById(
+            "normalButton"
+        );
+
+
+    // ------------------------------------------
+    // КОЛИЧЕСТВО КАРТОЧЕК
+    // ------------------------------------------
+
+    if (total) {
+
+        total.textContent =
+            bugSearchState.cards.length;
+
+    }
+
+
+    // ------------------------------------------
+    // СТАТУС
+    // ------------------------------------------
+
+    if (status) {
+
+        status.textContent =
+            "Внимательно осмотри предмет и найди баг.";
+
+    }
+
+
+    // ------------------------------------------
+    // КНОПКИ
+    // ------------------------------------------
+
+    bugButton.onclick =
+        () => {
+
+            answerBugSearch(
+                true
+            );
+
+        };
+
+
+    normalButton.onclick =
+        () => {
+
+            answerBugSearch(
+                false
+            );
+
+        };
+
+
+    // ------------------------------------------
+    // ПОКАЗЫВАЕМ ПЕРВУЮ КАРТИНКУ
+    // ------------------------------------------
+
+    showBugSearchCard();
+
+
+    // ------------------------------------------
+    // ОЗВУЧКА
+    // ------------------------------------------
+
+    playVoice(
+        scene.voice
+    );
+}
+
+function showBugSearchCard() {
+
+    if (
+        bugSearchState.finished
+    ) {
+
+        return;
+    }
+
+
+    const cards =
+        bugSearchState.cards;
+
+
+    const index =
+        bugSearchState.currentIndex;
+
+
+    if (
+        index >= cards.length
+    ) {
+
+        finishBugSearch();
+
+        return;
+    }
+
+
+    const card =
+        cards[index];
+
+
+    const image =
+        document.getElementById(
+            "bugSearchImage"
+        );
+
+
+    const current =
+        document.getElementById(
+            "bugSearchCurrent"
+        );
+
+
+    const status =
+        document.getElementById(
+            "bugSearchStatus"
+        );
+
+
+    const bugButton =
+        document.getElementById(
+            "bugButton"
+        );
+
+
+    const normalButton =
+        document.getElementById(
+            "normalButton"
+        );
+
+
+    // ------------------------------------------
+    // ОБНОВЛЯЕМ НОМЕР
+    // ------------------------------------------
+
+    if (current) {
+
+        current.textContent =
+            index + 1;
+
+    }
+
+
+    // ------------------------------------------
+    // БЛОКИРУЕМ КНОПКИ
+    // ------------------------------------------
+
+    bugButton.disabled =
+        false;
+
+    normalButton.disabled =
+        false;
+
+
+    // ------------------------------------------
+    // СБРАСЫВАЕМ СТАТУС
+    // ------------------------------------------
+
+    if (status) {
+
+        status.textContent =
+            "Внимательно осмотри предмет.";
+
+    }
+
+
+    // ------------------------------------------
+    // ПЛАВНАЯ СМЕНА КАРТИНКИ
+    // ------------------------------------------
+
+    image.style.opacity = "0";
+
+
+    setTimeout(
+        () => {
+
+            image.src =
+                card.image;
+
+
+            image.onload =
+                () => {
+
+                    image.style.opacity =
+                        "1";
+
+                };
+
+        },
+        150
+    );
+
+}
+
+function answerBugSearch(isBug) {
+
+    if (
+        bugSearchState.finished
+    ) {
+
+        return;
+    }
+
+
+    const card =
+        bugSearchState.cards[
+            bugSearchState.currentIndex
+        ];
+
+
+    if (!card) {
+
+        return;
+    }
+
+
+    const bugButton =
+        document.getElementById(
+            "bugButton"
+        );
+
+
+    const normalButton =
+        document.getElementById(
+            "normalButton"
+        );
+
+
+    bugButton.disabled =
+        true;
+
+    normalButton.disabled =
+        true;
+
+
+    socket.emit(
+        "bugsearch:card_selected",
+        {
+            cardId: card.id,
+
+            answer:
+                isBug
+                    ? "bug"
+                    : "no_bug"
+                    }
+    );
+
+}
+
+// ==================================================
+// SEND CLICK TO SERVER
+// ==================================================
+function selectBugCard(cardId) {
+
+    if (bugSearchState.finished) {
+        return;
+    }
+
+    const buttons =
+        document.querySelectorAll(".bug-card");
+
+    buttons.forEach(button => {
+        button.disabled = true;
+    });
+
+    socket.emit(
+        "bugsearch:card_selected",
+        {
+            cardId
+        }
+    );
+}
+
+function renderBugSearchStatus() {
+
+    const status =
+        document.getElementById(
+            "bugSearchStatus"
+        );
+
+    if (!status) {
+        return;
+    }
+
+    status.textContent =
+        `Найдено багов: ${bugSearchState.found}/3 | ` +
+        `Ошибки: ${bugSearchState.mistakes}/2`;
 }
 
 // ==================================================
@@ -404,6 +946,91 @@ voiceToggle.addEventListener(
 
     }
 );
+
+// ==================================================
+// SCENE TIMER
+// ==================================================
+
+let sceneTimerInterval = null;
+let sceneTimerEndsAt = null;
+
+function startSceneTimer(endsAt) {
+
+    if (!sceneTimer) {
+        return;
+    }
+
+    // Останавливаем предыдущий таймер
+    if (sceneTimerInterval) {
+        clearInterval(sceneTimerInterval);
+        sceneTimerInterval = null;
+    }
+
+    sceneTimerEndsAt = endsAt;
+
+    function updateSceneTimer() {
+
+        const remaining =
+            Math.max(
+                0,
+                sceneTimerEndsAt - Date.now()
+            );
+
+        const seconds =
+            Math.ceil(
+                remaining / 1000
+            );
+
+        const minutes =
+            Math.floor(seconds / 60);
+
+        const secs =
+            seconds % 60;
+
+        sceneTimer.textContent =
+            `⏱ ${minutes}:${String(secs).padStart(2, "0")}`;
+
+        if (remaining <= 0) {
+
+            clearInterval(
+                sceneTimerInterval
+            );
+
+            sceneTimerInterval = null;
+
+            sceneTimer.textContent =
+                "⏱ 0:00";
+        }
+    }
+
+    updateSceneTimer();
+
+    sceneTimerInterval =
+        setInterval(
+            updateSceneTimer,
+            250
+        );
+}
+
+
+function stopSceneTimer() {
+
+    if (sceneTimerInterval) {
+
+        clearInterval(
+            sceneTimerInterval
+        );
+
+        sceneTimerInterval = null;
+    }
+
+    if (sceneTimer) {
+        sceneTimer.textContent =
+            "⏱ 0:00";
+    }
+
+    sceneTimerEndsAt = null;
+}
 
 // ==================================================
 // SOCKET CONNECTION
@@ -652,9 +1279,296 @@ socket.on(
 
 
 // ==================================================
+// BUG SEARCH RESULT
+// ==================================================
+socket.on(
+    "bugsearch:result",
+    ({
+        cardId,
+        answer,
+        correct,
+        found,
+        mistakes,
+        finished,
+        result,
+        points
+    }) => {
+
+        console.log(
+            "Результат bug search:",
+            {
+                cardId,
+                correct,
+                found,
+                mistakes,
+                finished,
+                result,
+                points
+            }
+        );
+
+
+        bugSearchState.found =
+            found;
+
+
+        bugSearchState.mistakes =
+            mistakes;
+
+
+        const status =
+            document.getElementById(
+                "bugSearchStatus"
+            );
+
+
+        // ------------------------------------------
+        // ПРАВИЛЬНО
+        // ------------------------------------------
+
+        if (correct) {
+
+            if (status) {
+        
+                if (answer === "bug") {
+        
+                    status.textContent =
+                        "✅ Верно! Баг найден.";
+        
+                } else {
+        
+                    status.textContent =
+                        "✅ Верно! Здесь всё нормально.";
+        
+                }
+        
+            }
+        
+        }
+
+
+        // ------------------------------------------
+        // НЕПРАВИЛЬНО
+        // ------------------------------------------
+
+        else {
+
+            if (status) {
+
+                status.textContent =
+                    answer === "bug"
+                        ? "❌ Здесь бага нет."
+                        : "❌ Здесь был баг!";
+                }
+
+        }
+
+
+        // ------------------------------------------
+        // ИГРА ЗАКОНЧЕНА ПОБЕДОЙ
+        // ------------------------------------------
+
+        if (
+            finished &&
+            result === "win"
+        ) {
+
+            bugSearchState.finished =
+                true;
+
+
+            if (status) {
+
+                status.textContent =
+                    `🎉 Все баги найдены! +${points} очков.`;
+
+            }
+
+
+            setTimeout(
+                () => {
+
+                    finishBugSearch();
+
+                },
+                1500
+            );
+
+
+            return;
+        }
+
+
+        // ------------------------------------------
+        // ПРОИГРЫШ
+        // ------------------------------------------
+
+        if (
+            finished &&
+            result === "lose"
+        ) {
+
+            bugSearchState.finished =
+                true;
+
+
+            if (status) {
+
+                status.textContent =
+                    "💥 Слишком много ошибок. Ты проиграл в этой мини-игре.";
+
+            }
+
+
+            setTimeout(
+                () => {
+
+                    finishBugSearch();
+
+                },
+                1500
+            );
+
+
+            return;
+        }
+
+
+        // ------------------------------------------
+        // ПЕРЕХОД К СЛЕДУЮЩЕЙ КАРТИНКЕ
+        // ------------------------------------------
+
+        setTimeout(
+            () => {
+
+                bugSearchState.currentIndex++;
+
+                showBugSearchCard();
+
+            },
+            1200
+        );
+
+    }
+);
+
+// ==================================================
+// BUG SEARCH WIN
+// ==================================================
+function showBugSearchWin(points) {
+
+    const status =
+        document.getElementById(
+            "bugSearchStatus"
+        );
+
+    if (status) {
+
+        status.textContent =
+            `🎉 Все баги найдены! +${points} очков. ` +
+            `Ждём окончания таймера...`;
+
+    }
+
+    document
+        .querySelectorAll(".bug-card")
+        .forEach(button => {
+
+            button.disabled = true;
+
+        });
+}
+
+// ==================================================
+// BUG SEARCH LOSE
+// ==================================================
+function showBugSearchLose() {
+
+    const status =
+        document.getElementById(
+            "bugSearchStatus"
+        );
+
+    if (status) {
+
+        status.textContent =
+            "💥 Слишком много ошибок. " +
+            "Ты проиграл эту сцену.";
+
+    }
+
+    document
+        .querySelectorAll(".bug-card")
+        .forEach(button => {
+
+            button.disabled = true;
+
+        });
+}
+
+function finishBugSearch() {
+
+    console.log(
+        "Bug search завершён"
+    );
+
+
+    bugSearchState.finished =
+        true;
+
+
+    const bugSearch =
+        document.getElementById(
+            "bugSearch"
+        );
+
+
+    const status =
+        document.getElementById(
+            "bugSearchStatus"
+        );
+
+
+    const bugButton =
+        document.getElementById(
+            "bugButton"
+        );
+
+
+    const normalButton =
+        document.getElementById(
+            "normalButton"
+        );
+
+
+    bugButton.disabled =
+        true;
+
+
+    normalButton.disabled =
+        true;
+
+
+    if (status) {
+
+        status.textContent =
+            "Мини-игра завершена.";
+
+    }
+
+
+    /*
+     * Здесь НЕ нужно вручную переходить
+     * на следующую сцену.
+     *
+     * Сервер сам перейдёт туда после
+     * истечения duration.
+     */
+}
+
+// ==================================================
 // TEAM BUTTONS
 // ==================================================
-
 teamButtons.forEach(
     (button) => {
 
@@ -665,26 +1579,27 @@ teamButtons.forEach(
                 const team =
                     button.dataset.team;
 
-
                 console.log(
                     "Выбрана команда:",
                     team
                 );
 
+                // Визуально показываем выбранную команду
+                markSelectedButton(
+                    button,
+                    ".team-buttons"
+                );
 
-                // Блокируем все кнопки
+                // Блокируем кнопки,
                 // пока сервер не подтвердит выбор
-
                 teamButtons.forEach(
                     btn => {
                         btn.disabled = true;
                     }
                 );
 
-
                 teamStatus.textContent =
                     "Сохраняем выбор...";
-
 
                 socket.emit(
                     "player:choose_team",
@@ -755,63 +1670,113 @@ socket.on(
 
 socket.on(
     "game:started",
-    ({ scene }) => {
-
-        // ------------------------------------------
-        // ИГРА ЗАПУЩЕНА
-        // ------------------------------------------
+    ({ scene, timer }) => {
 
         console.log(
-            "Получена новая сцена:"
+            "Получена новая сцена:",
+            scene
         );
 
-
-        // Скрываем lobby
-
-        lobbyScreen.classList.add(
-            "hidden"
-        );
-
-
-        // Скрываем старые экраны
-
-        gameScreen.classList.add(
-            "hidden"
-        );
-
-        waitingScreen.classList.add("hidden");
-
-        gameScreen.classList.remove("hidden");
+        if (dialoguePanel) {
+            dialoguePanel.classList.remove("hidden");
+        }
         
+        if (bugSearch) {
+            bugSearch.classList.add("hidden");
+        }
+
         currentScene = scene;
-        console.log(
-            "Переход к сцене:",
-            scene.id
-        );
 
-        // Останавливаем озвучку стартового экрана
-        if (welcomeVoice) {
+        // Запускаем общий таймер сцены
+        if (timer && timer.endsAt) {
 
-            welcomeVoice.pause();
+            startSceneTimer(
+                timer.endsAt
+            );
 
-            welcomeVoice.currentTime = 0;
+        } else {
+
+            stopSceneTimer();
 
         }
+
+        // Останавливаем стартовую озвучку
+        if (welcomeVoice) {
+            welcomeVoice.pause();
+            welcomeVoice.currentTime = 0;
+        }
+
+        // Скрываем старые экраны
+        joinScreen.classList.add("hidden");
+        lobbyScreen.classList.add("hidden");
+        teamScreen.classList.add("hidden");
+        waitingScreen.classList.add("hidden");
+
+        // Показываем игровой экран
+        gameScreen.classList.remove("hidden");
+
+        // ==========================================
+        // BUG SEARCH
+        // ==========================================
+
+        if (scene.type === "bug_search") {
+
+            // ------------------------------------------
+            // ФОН BUG SEARCH
+            // ------------------------------------------
+        
+            if (
+                gameBackground &&
+                scene.background
+            ) {
+        
+                gameBackground.style.backgroundImage =
+                    `url("${scene.background}")`;
+        
+            }
+        
+            // ------------------------------------------
+            // УБИРАЕМ ПЕРСОНАЖЕЙ ПРЕДЫДУЩЕЙ СЦЕНЫ
+            // ------------------------------------------
+        
+            if (charactersLayer) {
+        
+                charactersLayer.innerHTML = "";
+        
+            }
+        
+            // Очищаем имя персонажа
+            if (characterName) {
+        
+                characterName.textContent = "";
+        
+            }
+        
+            // ------------------------------------------
+            // СКРЫВАЕМ TRANSITION
+            // ------------------------------------------
+        
+            hideSceneTransition();
+        
+            // ------------------------------------------
+            // ЗАПУСКАЕМ BUG SEARCH
+            // ------------------------------------------
+        
+            renderBugSearchScene(scene);
+        
+            return;
+        }
+
+        // ==========================================
+        // ОБЫЧНАЯ СЦЕНА
+        // ==========================================
+
         transitionToScene(
             () => {
 
-                // ------------------------------------------
-                // ПОКАЗЫВАЕМ ИГРОВОЙ ЭКРАН
-                // ------------------------------------------
-
-                joinScreen.classList.add("hidden");
-                lobbyScreen.classList.add("hidden");
-                teamScreen.classList.add("hidden");
-                waitingScreen.classList.add("hidden");
-
-                // ------------------------------------------
+                // ----------------------------------
                 // ФОН
-                // ------------------------------------------
+                // ----------------------------------
 
                 if (
                     gameBackground &&
@@ -822,9 +1787,10 @@ socket.on(
                         `url("${scene.background}")`;
 
                 }
-                // ------------------------------------------
+
+                // ----------------------------------
                 // ПЕРСОНАЖИ
-                // ------------------------------------------
+                // ----------------------------------
 
                 if (charactersLayer) {
 
@@ -838,75 +1804,56 @@ socket.on(
                                 : []
                         );
 
-                        characters.forEach(
-                            character => {
-                        
-                                // ==========================================
-                                // РАМКА ПЕРСОНАЖА
-                                // ==========================================
-                        
-                                const characterFrame =
-                                    document.createElement("div");
-                        
-                                characterFrame.className =
-                                    "character-frame";
-                        
-                        
-                                // ==========================================
-                                // ИЗОБРАЖЕНИЕ ПЕРСОНАЖА
-                                // ==========================================
-                        
-                                const image =
-                                    document.createElement("img");
-                        
-                                image.className =
-                                    "character-avatar";
-                        
-                                image.src =
-                                    character.image;
-                        
-                                image.alt =
-                                    character.name || "";
-                        
-                        
-                                // ==========================================
-                                // ИМЯ ПЕРСОНАЖА
-                                // ==========================================
-                        
-                                const name =
-                                    document.createElement("div");
-                        
-                                name.className =
-                                    "character-frame-name";
-                        
-                                name.textContent =
-                                    character.name || "";
-                        
-                        
-                                // ==========================================
-                                // СОБИРАЕМ
-                                // ==========================================
-                        
-                                characterFrame.appendChild(
-                                    image
-                                );
-                        
-                                characterFrame.appendChild(
-                                    name
-                                );
-                        
-                                charactersLayer.appendChild(
-                                    characterFrame
-                                );
-                        
-                            }
-                        );
+                    characters.forEach(
+                        character => {
+
+                            const characterFrame =
+                                document.createElement("div");
+
+                            characterFrame.className =
+                                "character-frame";
+
+                            const image =
+                                document.createElement("img");
+
+                            image.className =
+                                "character-avatar";
+
+                            image.src =
+                                character.image;
+
+                            image.alt =
+                                character.name || "";
+
+                            const name =
+                                document.createElement("div");
+
+                            name.className =
+                                "character-frame-name";
+
+                            name.textContent =
+                                character.name || "";
+
+                            characterFrame.appendChild(
+                                image
+                            );
+
+                            characterFrame.appendChild(
+                                name
+                            );
+
+                            charactersLayer.appendChild(
+                                characterFrame
+                            );
+
+                        }
+                    );
 
                 }
 
-                // ------------------------------------------
+                // ----------------------------------
                 // ИМЯ
-                // ------------------------------------------
+                // ----------------------------------
 
                 if (
                     characterName &&
@@ -918,36 +1865,34 @@ socket.on(
 
                 }
 
-
-                // ------------------------------------------
+                // ----------------------------------
                 // ТЕКСТ
-                // ------------------------------------------
+                // ----------------------------------
 
                 if (dialogueText) {
 
                     dialogueText.textContent =
-                        scene.text;
+                        scene.text || "";
 
                 }
 
-                // ------------------------------------------
-                // ОЗВУЧКА СЦЕНЫ
-                // ------------------------------------------
+                // ----------------------------------
+                // ОЗВУЧКА
+                // ----------------------------------
 
                 playVoice(
                     scene.voice
                 );
 
-                // ------------------------------------------
+                // ----------------------------------
                 // ВАРИАНТЫ
-                // ------------------------------------------
+                // ----------------------------------
 
                 if (choiceButtons) {
 
                     choiceButtons.innerHTML = "";
 
-
-                    scene.choices.forEach(
+                    (scene.choices || []).forEach(
                         choice => {
 
                             const button =
@@ -955,40 +1900,48 @@ socket.on(
                                     "button"
                                 );
 
-
                             button.className =
                                 "game-choice-button";
-
 
                             button.textContent =
                                 choice.text;
 
-
                             button.dataset.choiceId =
                                 choice.id;
 
-
-                            button.addEventListener(
-                                "click",
-                                () => {
-
-                                    console.log(
-                                        "Выбран вариант:",
-                                        choice.id
-                                    );
-
-
-                                    socket.emit(
-                                        "player:choice",
-                                        {
-                                            choiceId:
-                                                choice.id
-                                        }
-                                    );
-
-                                }
-                            );
-
+                                button.addEventListener(
+                                    "click",
+                                    () => {
+                                
+                                        console.log(
+                                            "Выбран вариант:",
+                                            choice.id
+                                        );
+                                
+                                        // Показываем, какой вариант выбран
+                                        markSelectedButton(
+                                            button,
+                                            ".choice-buttons"
+                                        );
+                                
+                                        // Блокируем повторное нажатие
+                                        const buttons =
+                                            choiceButtons.querySelectorAll("button");
+                                
+                                        buttons.forEach(btn => {
+                                            btn.disabled = true;
+                                        });
+                                
+                                        socket.emit(
+                                            "player:choice",
+                                            {
+                                                choiceId:
+                                                    choice.id
+                                            }
+                                        );
+                                
+                                    }
+                                );
 
                             choiceButtons.appendChild(
                                 button
@@ -1095,17 +2048,45 @@ socket.on(
 socket.on(
     "voting:revote_started",
     ({ tiedChoices, duration, round }) => {
-        console.log(`Начался ревот (раунд ${round}) – доступны варианты:`, tiedChoices);
-        console.log(`Время до окончания ревота: ${duration} сек`);
 
-        // Сбрасываем визуальное выделение кнопок
-        const buttons = choiceButtons.querySelectorAll("button");
-        buttons.forEach(btn => btn.classList.remove("selected"));
+        console.log(
+            `Начался ревот (раунд ${round}) – доступны варианты:`,
+            tiedChoices
+        );
 
-        // Можно добавить подсказку в UI, например:
-        const status = document.getElementById("teamStatus") || document.createElement("p");
-        status.textContent = `Ревот! Выберите один из вариантов: ${tiedChoices.join(", ")}`;
-        if (!status.parentElement) document.body.appendChild(status);
+        console.log(
+            `Время до окончания ревота: ${duration} сек`
+        );
+
+        if (!choiceButtons) {
+            return;
+        }
+
+        const buttons =
+            choiceButtons.querySelectorAll("button");
+
+        buttons.forEach(btn => {
+
+            // Сбрасываем старый выбор
+            btn.classList.remove("selected");
+
+            // Снова разрешаем выбирать
+            btn.disabled = false;
+
+        });
+
+        const status =
+            document.getElementById("teamStatus");
+
+        if (status) {
+
+            status.textContent =
+                `Ревот! Выберите один из вариантов: ${
+                    tiedChoices.join(", ")
+                }`;
+
+        }
+
     }
 );
 

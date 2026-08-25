@@ -27,7 +27,7 @@ module.exports = {
                 ownTeam: 30,
                 otherTeam: 10
             },
-            nextSceneId: "path",
+            nextSceneId: "alice",
             transitionText: "Команда решает всё задокументировать..."
         },
     

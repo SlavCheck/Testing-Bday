@@ -38,7 +38,7 @@ module.exports = {
                 otherTeam: 10
             },
 
-            nextSceneId: "path"
+            nextSceneId: "bugsearch"
         },
 
         {
@@ -53,7 +53,7 @@ module.exports = {
                 otherTeam: 10
             },
 
-            nextSceneId: "path"
+            nextSceneId: "bugsearch"
         },
 
         {
@@ -68,7 +68,7 @@ module.exports = {
                 otherTeam: 10
             },
 
-            nextSceneId: "path"
+            nextSceneId: "bugsearch"
         }
 
     ]
