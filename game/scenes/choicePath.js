@@ -3,7 +3,7 @@ module.exports = {
     nextSceneId: "diningRoom",               // «по умолчанию» если ни один вариант не задаёт свой переход
     background: "/assets/backgrounds/hall_choice_bckg.png",
     voice: "/assets/sounds/Scene8_choice_path.wav",
-    text: "Вы стоите на перекрёстке. Три пути: 1. Налево — столовая / 2. Прямо — комната умных устройств / 3. Направо — серверная",
+    text: "Вы стоите на перекрёстке. Три пути: 1. Налево — столовая / 2. Прямо — Умный Дом / 3. Направо — серверная",
     voting: {
         enabled: true,
         duration: 35,

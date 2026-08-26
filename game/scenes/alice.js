@@ -4,7 +4,7 @@ module.exports = {
 
     background:
         "/assets/backgrounds/office_bckg.png",
-
+    nextSceneId: "bugsearch",
     character: {
         name: "Алиса",
         image:
@@ -31,7 +31,7 @@ module.exports = {
             team: "strategist",
 
             text:
-                "Алиса, покажи нам панель управления умным домом. Нужно проверить устройства перед тем, как идти в серверную",
+                "Алиса, покажи нам панель управления умным домом.",
 
             points: {
                 ownTeam: 30,
