@@ -39,6 +39,7 @@ module.exports = {
                 ownTeam: 30,
                 otherTeam: 10
             },
+            nextSceneId: "alice",
             transitionText: "Кажется, кто-то слишком любит легаси..."
         },
     

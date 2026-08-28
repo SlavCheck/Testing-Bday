@@ -27,7 +27,7 @@ module.exports = {
                 ownTeam: 15,
                 otherTeam: 15
             },
-            nextSceneId: "diningRoom2",
+            nextSceneId: "thanksFromR2D2",
             transitionText: "ТЕКСТ"
         },
     
@@ -39,7 +39,7 @@ module.exports = {
                 ownTeam: 30,
                 otherTeam: 30
             },
-            nextSceneId: "diningRoom2",
+            nextSceneId: "thanksFromR2D2",
             transitionText: "Текст2"
         },
     
@@ -51,7 +51,7 @@ module.exports = {
                 ownTeam: 5,
                 otherTeam: 5
             },
-            nextSceneId: "diningRoom2",
+            nextSceneId: "thanksFromR2D2",
             transitionText: "Текст3"
         }
     ]

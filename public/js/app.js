@@ -1884,6 +1884,99 @@ socket.on(
                     scene.voice
                 );
 
+                // ==========================================
+                // ФИНАЛЬНАЯ СЦЕНА — ПОСЛЕДОВАТЕЛЬНЫЕ ПЕРСОНАЖИ
+                // ==========================================
+
+                if (
+                    scene.finalCharacters &&
+                    charactersLayer
+                ) {
+
+                    let index = 0;
+
+                    function showFinalCharacter() {
+
+                        if (
+                            index >= scene.finalCharacters.length
+                        ) {
+                            return;
+                        }
+
+                        const character =
+                            scene.finalCharacters[index];
+
+                        charactersLayer.innerHTML = "";
+
+                        const characterFrame =
+                            document.createElement("div");
+
+                        characterFrame.className =
+                            "character-frame";
+
+                        const image =
+                            document.createElement("img");
+
+                        image.className =
+                            "character-avatar";
+
+                        image.src =
+                            character.image;
+
+                        image.alt =
+                            character.name || "";
+
+                        const name =
+                            document.createElement("div");
+
+                        name.className =
+                            "character-frame-name";
+
+                        name.textContent =
+                            character.name || "";
+
+                        characterFrame.appendChild(
+                            image
+                        );
+
+                        characterFrame.appendChild(
+                            name
+                        );
+
+                        charactersLayer.appendChild(
+                            characterFrame
+                        );
+
+                        if (characterName) {
+                            characterName.textContent =
+                                character.name || "";
+                        }
+
+                        if (dialogueText) {
+                            dialogueText.textContent =
+                                character.text || "";
+                        }
+
+                        playVoice(
+                            character.voice
+                        );
+
+                        index++;
+
+                        if (character.duration) {
+
+                            setTimeout(
+                                showFinalCharacter,
+                                character.duration
+                            );
+
+                        }
+
+                    }
+
+                    showFinalCharacter();
+                }
+
                 // ----------------------------------
                 // ВАРИАНТЫ
                 // ----------------------------------
