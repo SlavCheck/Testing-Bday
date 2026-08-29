@@ -10,7 +10,7 @@ const io = new Server(server);
 const introScene =
     require("./game/scenes/intro");
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const path = require("path");
 
 
@@ -2001,9 +2001,7 @@ server.listen(
     PORT,
     () => {
 
-        console.log(
-            `Сервер запущен: http://localhost:${PORT}`
-        );
+        console.log(`Сервер запущен на порту ${PORT}`);
 
     }
 );
