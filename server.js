@@ -311,20 +311,31 @@ function moveToNextScene(game) {
         game.currentScene?.nextSceneId;
 
 
-    if (!nextSceneId) {
+        if (!nextSceneId) {
 
-        console.log(
-            `Сцена "${game.currentScene?.id ?? "none"}" не имеет следующей сцены — игра завершена.`
-        );
-
-        io.to(
-            `game_${game.id}`
-        ).emit(
-            "game:ended"
-        );
-
-        return;
-    }
+            console.log(
+                `Сцена "${game.currentScene?.id ?? "none"}" не имеет следующей сцены — игра завершена.`
+            );
+        
+            const results =
+                [...game.players.values()]
+                    .map(player => ({
+                        nickname: player.nickname,
+                        score: player.score
+                    }))
+                    .sort((a, b) => b.score - a.score);
+        
+            io.to(
+                `game_${game.id}`
+            ).emit(
+                "game:finished",
+                {
+                    results
+                }
+            );
+        
+            return;
+        }
 
 
     // --------------------------------------------------

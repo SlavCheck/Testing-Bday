@@ -3,7 +3,7 @@ module.exports = {
     nextSceneId: "finalScene",               // «по умолчанию» если ни один вариант не задаёт свой переход
     background: "/assets/backgrounds/serverRoomLight.png",
     voice: "/assets/sounds/Scene19_D_Vader_last_scene.wav",
-    text: "Вы... вы сильнее, чем я думал. Но этого недостаточно!»",
+    text: "Вы... вы сильнее, чем я думал. Но этого недостаточно!",
     character: {
         name: "Дарт Вейдер",
         image: "/assets/characters/DV_portr.png"

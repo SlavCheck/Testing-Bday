@@ -112,6 +112,12 @@ document.addEventListener(
 // ==================================================
 // ELEMENTS
 // ==================================================
+const resultsScreen =
+    document.getElementById("resultsScreen");
+
+const resultsList =
+    document.getElementById("resultsList");
+
 const sceneTimer =
     document.getElementById("sceneTimer");
 
@@ -208,11 +214,6 @@ const gameBackground =
         "gameBackground"
     );
 
-const characterName =
-    document.getElementById(
-        "characterName"
-    );
-
 const dialogueText =
     document.getElementById(
         "dialogueText"
@@ -305,6 +306,7 @@ function updateSceneTimer(seconds) {
         ).padStart(2, "0")}`;
 
 }
+
 
 function startSceneTimer(endsAt) {
 
@@ -486,11 +488,6 @@ function renderBugSearchScene(scene) {
     if (charactersLayer) {
         charactersLayer.innerHTML = "";
     }
-
-    if (characterName) {
-        characterName.textContent = "";
-    }
-
     // ------------------------------------------
     // СОСТОЯНИЕ
     // ------------------------------------------
@@ -1745,13 +1742,6 @@ socket.on(
         
             }
         
-            // Очищаем имя персонажа
-            if (characterName) {
-        
-                characterName.textContent = "";
-        
-            }
-        
             // ------------------------------------------
             // СКРЫВАЕМ TRANSITION
             // ------------------------------------------
@@ -1852,20 +1842,6 @@ socket.on(
                 }
 
                 // ----------------------------------
-                // ИМЯ
-                // ----------------------------------
-
-                if (
-                    characterName &&
-                    scene.character
-                ) {
-
-                    characterName.textContent =
-                        scene.character.name;
-
-                }
-
-                // ----------------------------------
                 // ТЕКСТ
                 // ----------------------------------
 
@@ -1946,11 +1922,6 @@ socket.on(
                         charactersLayer.appendChild(
                             characterFrame
                         );
-
-                        if (characterName) {
-                            characterName.textContent =
-                                character.name || "";
-                        }
 
                         if (dialogueText) {
                             dialogueText.textContent =
@@ -2269,5 +2240,57 @@ returnToStartButton.addEventListener(
 
         window.location.href = "/";
 
+    }
+);
+
+socket.on(
+    "game:finished",
+    ({ results }) => {
+
+        console.log(
+            "Игра завершена. Результаты:",
+            results
+        );
+
+        // Скрываем игровые экраны
+        joinScreen.classList.add("hidden");
+        lobbyScreen.classList.add("hidden");
+        teamScreen.classList.add("hidden");
+        waitingScreen.classList.add("hidden");
+        gameScreen.classList.add("hidden");
+
+        // Показываем результаты
+        resultsScreen.classList.remove("hidden");
+
+        // Очищаем старый список
+        resultsList.innerHTML = "";
+
+        // results уже отсортирован сервером
+        results.forEach(
+            (player, index) => {
+
+                const row =
+                    document.createElement("div");
+
+                row.className =
+                    "result-row";
+
+                row.innerHTML = `
+                    <span class="result-place">
+                        ${index + 1}
+                    </span>
+
+                    <span class="result-name">
+                        ${player.nickname}
+                    </span>
+
+                    <span class="result-score">
+                        ${player.score}
+                    </span>
+                `;
+
+                resultsList.appendChild(row);
+            }
+        );
     }
 );

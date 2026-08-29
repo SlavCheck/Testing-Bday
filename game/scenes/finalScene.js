@@ -1,7 +1,7 @@
 module.exports = {
 
     id: "finalScene",
-
+    duration: 60,
     nextSceneId: "",
 
     background:
