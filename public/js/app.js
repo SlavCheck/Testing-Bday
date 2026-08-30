@@ -55,17 +55,25 @@ let playerId =
         "starTestQuest_playerId"
     );
 
-
 if (!playerId) {
 
     playerId =
-        crypto.randomUUID();
+        (
+            typeof crypto !== "undefined" &&
+            typeof crypto.randomUUID === "function"
+        )
+            ? crypto.randomUUID()
+            : "player-" +
+              Date.now() +
+              "-" +
+              Math.random()
+                  .toString(36)
+                  .substring(2, 10);
 
     localStorage.setItem(
         "starTestQuest_playerId",
         playerId
     );
-
 }
 
 let savedNickname =

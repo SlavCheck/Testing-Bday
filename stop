@@ -1,0 +1,25 @@
+[1mdiff --git a/server.js b/server.js[m
+[1mindex e536882..9aab5f5 100644[m
+[1m--- a/server.js[m
+[1m+++ b/server.js[m
+[36m@@ -10,7 +10,7 @@[m [mconst io = new Server(server);[m
+ const introScene =[m
+     require("./game/scenes/intro");[m
+ [m
+[31m-const PORT = 3000;[m
+[32m+[m[32mconst PORT = process.env.PORT || 3000;[m
+ const path = require("path");[m
+ [m
+ [m
+[36m@@ -2001,9 +2001,7 @@[m [mserver.listen([m
+     PORT,[m
+     () => {[m
+ [m
+[31m-        console.log([m
+[31m-            `Сервер запущен: http://localhost:${PORT}`[m
+[31m-        );[m
+[32m+[m[32m        console.log(`Сервер запущен на порту ${PORT}`);[m
+ [m
+     }[m
+ );[m
+\ No newline at end of file[m
