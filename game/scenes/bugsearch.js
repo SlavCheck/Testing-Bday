@@ -48,5 +48,5 @@ module.exports = {
 
     points: 100,
 
-    nextSceneId: "officermeet"
+    nextSceneId: "officerMeet"
 };

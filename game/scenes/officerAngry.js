@@ -1,5 +1,5 @@
 module.exports = {
-    id: "officerangry",
+    id: "officerAngry",
     nextSceneId: "choicePath",               // «по умолчанию» если ни один вариант не задаёт свой переход
     background: "/assets/backgrounds/officer_angry_hall_bckg.png",
     character: {

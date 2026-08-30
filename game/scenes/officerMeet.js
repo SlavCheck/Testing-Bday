@@ -1,6 +1,6 @@
 module.exports = {
-    id: "officermeet",
-    nextSceneId: "officerangry",               // «по умолчанию» если ни один вариант не задаёт свой переход
+    id: "officerMeet",
+    nextSceneId: "officerAngry",               // «по умолчанию» если ни один вариант не задаёт свой переход
     background: "/assets/backgrounds/hall_bckg.png",
     character: {
         name: "Имперский офицер",
@@ -27,7 +27,7 @@ module.exports = {
                 ownTeam: 30,
                 otherTeam: 10
             },
-            nextSceneId: "officerangry",
+            nextSceneId: "officerAngry",
             transitionText: "стратег"
         },
     
@@ -39,7 +39,7 @@ module.exports = {
                 ownTeam: 30,
                 otherTeam: 10
             },
-            nextSceneId: "officerangry",
+            nextSceneId: "officerAngry",
             transitionText: "шутник"
         },
     
@@ -51,7 +51,7 @@ module.exports = {
                 ownTeam: 30,
                 otherTeam: 10
             },
-            nextSceneId: "officerangry",
+            nextSceneId: "officerAngry",
             transitionText: "критик"
         }
     ]
