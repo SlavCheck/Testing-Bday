@@ -2375,3 +2375,69 @@ button:disabled {
     pointer-events: none;
 }
 
+/* ==================================================
+   GAME PAUSE OVERLAY
+   ================================================== */
+
+   #gamePauseOverlay {
+    position: fixed;
+    inset: 0;
+
+    z-index: 99999;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(0, 0, 0, 0.82);
+
+    opacity: 0;
+    visibility: hidden;
+
+    transition:
+        opacity 0.3s ease,
+        visibility 0.3s ease;
+}
+
+#gamePauseOverlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+#gamePauseOverlay.hidden {
+    display: none;
+}
+
+.pause-overlay-content {
+    text-align: center;
+
+    padding: 40px;
+
+    max-width: 500px;
+
+    color: white;
+}
+
+.pause-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+}
+
+.pause-title {
+    font-size: 32px;
+    font-weight: 700;
+
+    margin-bottom: 15px;
+}
+
+.pause-text {
+    font-size: 18px;
+
+    margin-bottom: 12px;
+}
+
+.pause-waiting {
+    font-size: 15px;
+
+    opacity: 0.7;
+}

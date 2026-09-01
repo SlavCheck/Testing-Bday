@@ -36,12 +36,14 @@ function startSceneTimer(game, duration) {
 
     if (!duration) {
         game.sceneTimer = null;
+        game.sceneTimerTimeout = null;
         return;
     }
 
     // Отменяем предыдущий таймер
     if (game.sceneTimerTimeout) {
         clearTimeout(game.sceneTimerTimeout);
+        game.sceneTimerTimeout = null;
     }
 
     const endsAt =
@@ -63,8 +65,14 @@ function startSceneTimer(game, duration) {
     game.sceneTimerTimeout =
         setTimeout(() => {
 
-            // Если за это время сцена уже сменилась —
-            // ничего не делаем
+            game.sceneTimerTimeout = null;
+
+            // Если за это время игра была поставлена
+            // на паузу — ничего не делаем
+            if (game.status !== "playing") {
+                return;
+            }
+
             if (
                 !game.currentScene ||
                 !game.sceneTimer ||
@@ -93,7 +101,400 @@ function startSceneTimer(game, duration) {
         }, duration * 1000);
 }
 
+// ==================================================
+// PAUSE GAME
+// ==================================================
 
+function pauseGame(game) {
+
+    if (game.status !== "playing") {
+        return false;
+    }
+
+    console.log(
+        `Пауза игры ${game.id}`
+    );
+
+    // ------------------------------------------
+    // Сохраняем оставшееся время таймера сцены
+    // ------------------------------------------
+
+    let sceneTimerRemaining = null;
+
+    if (
+        game.sceneTimer &&
+        game.sceneTimer.endsAt
+    ) {
+
+        sceneTimerRemaining =
+            Math.max(
+                0,
+                game.sceneTimer.endsAt - Date.now()
+            );
+    }
+
+    // Теперь останавливаем таймер сцены
+    if (game.sceneTimerTimeout) {
+
+        clearTimeout(
+            game.sceneTimerTimeout
+        );
+
+        game.sceneTimerTimeout = null;
+    }
+
+    // Сам активный таймер больше не нужен
+    game.sceneTimer = null;
+
+
+    // ------------------------------------------
+    // Сохраняем оставшееся время голосования
+    // ------------------------------------------
+
+    let votingRemaining = null;
+
+    if (
+        game.voting &&
+        game.voting.active &&
+        game.voting.endsAt
+    ) {
+
+        votingRemaining =
+            Math.max(
+                0,
+                game.voting.endsAt - Date.now()
+            );
+    }
+
+
+    // ------------------------------------------
+    // Останавливаем таймер голосования
+    // ------------------------------------------
+
+    if (game.votingTimeout) {
+
+        clearTimeout(
+            game.votingTimeout
+        );
+
+        game.votingTimeout = null;
+    }
+
+
+    // ------------------------------------------
+    // Сохраняем оставшееся время transition
+    // ------------------------------------------
+
+    let transitionRemaining = null;
+
+    if (
+        game.transitionTimeout &&
+        game.transitionEndsAt
+    ) {
+
+        transitionRemaining =
+            Math.max(
+                0,
+                game.transitionEndsAt - Date.now()
+            );
+
+        clearTimeout(
+            game.transitionTimeout
+        );
+
+        game.transitionTimeout = null;
+
+        game.transitionEndsAt = null;
+    }
+
+
+    // ------------------------------------------
+    // Сохраняем состояние паузы
+    // ------------------------------------------
+
+    game.pauseState = {
+
+        sceneTimerRemaining,
+
+        votingRemaining,
+
+        transitionRemaining
+
+    };
+
+
+    // ------------------------------------------
+    // Меняем статус
+    // ------------------------------------------
+
+    game.status = "paused";
+
+
+    // ------------------------------------------
+    // Сообщаем всем игрокам
+    // ------------------------------------------
+
+    io.to(
+        `game_${game.id}`
+    ).emit(
+        "game:paused",
+        {
+            gameId: game.id,
+
+            timerRemaining:
+                sceneTimerRemaining
+        }
+    );
+
+
+    console.log(
+        `Игра ${game.id} поставлена на паузу. ` +
+        `Осталось: ${
+            sceneTimerRemaining !== null
+                ? (sceneTimerRemaining / 1000).toFixed(2)
+                : "нет таймера"
+        } сек.`
+    );
+
+    return true;
+}
+
+
+// ==================================================
+// RESUME GAME
+// ==================================================
+
+function resumeGame(game) {
+
+    if (game.status !== "paused") {
+        return false;
+    }
+
+    console.log(
+        `Продолжаем игру ${game.id}`
+    );
+
+    const pauseState =
+        game.pauseState || {};
+
+    // ------------------------------------------
+    // Возвращаем статус
+    // ------------------------------------------
+
+    game.status =
+        "playing";
+
+
+    // ------------------------------------------
+    // Восстанавливаем таймер сцены
+    // ------------------------------------------
+
+    if (
+        pauseState.sceneTimerRemaining !== null &&
+        pauseState.sceneTimerRemaining !== undefined
+    ) {
+
+        if (
+            pauseState.sceneTimerRemaining > 0
+        ) {
+
+            startSceneTimer(
+                game,
+                pauseState.sceneTimerRemaining / 1000
+            );
+
+        } else {
+
+            game.sceneTimer = null;
+
+        }
+
+    }
+
+
+    // ------------------------------------------
+    // Восстанавливаем голосование
+    // ------------------------------------------
+
+    if (
+        game.voting &&
+        game.voting.active &&
+        pauseState.votingRemaining !== null &&
+        pauseState.votingRemaining !== undefined &&
+        pauseState.votingRemaining > 0
+    ) {
+
+        game.voting.endsAt =
+            Date.now() +
+            pauseState.votingRemaining;
+
+        const scene =
+            game.currentScene;
+
+        game.votingTimeout =
+            setTimeout(
+                () => {
+
+                    game.votingTimeout =
+                        null;
+
+                    if (
+                        game.status !== "playing"
+                    ) {
+                        return;
+                    }
+
+                    finishSceneVoting(
+                        game,
+                        scene
+                    );
+
+                },
+                pauseState.votingRemaining
+            );
+
+
+        io.to(
+            `game_${game.id}`
+        ).emit(
+            "voting:resumed",
+            {
+                endsAt:
+                    game.voting.endsAt,
+
+                round:
+                    game.voting.round
+            }
+        );
+
+    }
+
+
+    // ------------------------------------------
+    // Восстанавливаем transition
+    // ------------------------------------------
+
+    if (
+        pauseState.transitionRemaining !== null &&
+        pauseState.transitionRemaining !== undefined &&
+        pauseState.transitionRemaining > 0
+    ) {
+
+        game.transitionEndsAt =
+            Date.now() +
+            pauseState.transitionRemaining;
+
+        game.transitionTimeout =
+            setTimeout(
+                () => {
+
+                    game.transitionTimeout =
+                        null;
+
+                    game.transitionEndsAt =
+                        null;
+
+                    if (
+                        game.status !== "playing"
+                    ) {
+                        return;
+                    }
+
+                    moveToNextScene(
+                        game
+                    );
+
+                },
+                pauseState.transitionRemaining
+            );
+
+    }
+
+
+    // ------------------------------------------
+    // Если таймер сцены закончился во время паузы
+    // ------------------------------------------
+
+    if (
+        pauseState.sceneTimerRemaining !== null &&
+        pauseState.sceneTimerRemaining !== undefined &&
+        pauseState.sceneTimerRemaining <= 0 &&
+        !game.voting?.active &&
+        !game.transitionTimeout
+    ) {
+
+        setTimeout(
+            () => {
+
+                if (
+                    game.status !== "playing"
+                ) {
+                    return;
+                }
+
+                moveToNextScene(
+                    game
+                );
+
+            },
+            0
+        );
+
+    }
+
+
+    // ------------------------------------------
+    // Очищаем pause state
+    // ------------------------------------------
+
+    game.pauseState =
+        null;
+
+
+    // ------------------------------------------
+    // Сообщаем игрокам
+    // ------------------------------------------
+
+    io.to(
+        `game_${game.id}`
+    ).emit(
+        "game:resumed",
+        {
+            gameId: game.id,
+
+            timer:
+                game.sceneTimer,
+
+            voting:
+                game.voting
+                    ? {
+                        active:
+                            game.voting.active,
+
+                        endsAt:
+                            game.voting.endsAt,
+
+                        round:
+                            game.voting.round,
+
+                        allowedChoices:
+                            game.voting.allowedChoices
+                                ? [
+                                    ...game.voting.allowedChoices
+                                ]
+                                : null
+                    }
+                    : null
+        }
+    );
+
+
+    console.log(
+        `Игра ${game.id} продолжена`
+    );
+
+    return true;
+}
 
 function generateGameCode() {
 
@@ -124,28 +525,25 @@ function generateGameCode() {
 function sendPlayerState(socket, game, player) {
     socket.emit("player:restore_state", {
         gameId: game.id,
-
+    
         nickname: player.nickname,
-
+    
         team: player.team,
         score: player.score,
-
+    
         status: game.status,
-
-        // <-- ОБЯЗАТЕЛЬНО! Сцена, в которой находится игра
+    
         scene: game.currentScene,
-
-        // Состояние внутри сцены (может быть null)
+    
         sceneState: player.sceneState,
-
-        // Выбор игрока, если он уже сделан
+    
         choiceId:
             player.sceneState?.choiceId ??
             player.currentChoice ??
             null,
-
+    
         timer: game.sceneTimer,
-
+    
         voting: game.voting ? {
             active: game.voting.active,
             endsAt: game.voting.endsAt,
@@ -153,7 +551,21 @@ function sendPlayerState(socket, game, player) {
             allowedChoices: game.voting.allowedChoices
                 ? [...game.voting.allowedChoices]
                 : null
-        } : null
+        } : null,
+    
+        pauseState:
+            game.pauseState
+                ? {
+                    sceneTimerRemaining:
+                        game.pauseState.sceneTimerRemaining,
+    
+                    votingRemaining:
+                        game.pauseState.votingRemaining,
+    
+                    transitionRemaining:
+                        game.pauseState.transitionRemaining
+                }
+                : null
     });
 }
 
@@ -180,23 +592,8 @@ function broadcastLobbyUpdate(game) {
 
 function startSceneVoting(game, scene) {
 
-    if (!scene.voting || !scene.voting.enabled) {
-        return;
-    }
+    const duration = scene.voting?.duration || 15;
 
-    const duration =
-        scene.voting.duration || 30;
-
-        for (
-            const player of
-            game.players.values()
-        ) {
-        
-            player.currentChoice =
-                null;
-        
-        }
-    
     game.voting = {
         active: true,
 
@@ -206,7 +603,9 @@ function startSceneVoting(game, scene) {
             Date.now() +
             duration * 1000,
 
-        round: 1
+        round: 1,
+
+        allowedChoices: null
     };
 
     console.log(
@@ -224,17 +623,24 @@ function startSceneVoting(game, scene) {
         }
     );
 
-    setTimeout(
-        () => {
+    game.votingTimeout =
+        setTimeout(
+            () => {
 
-            finishSceneVoting(
-                game,
-                scene
-            );
+                game.votingTimeout = null;
 
-        },
-        duration * 1000
-    );
+                if (game.status !== "playing") {
+                    return;
+                }
+
+                finishSceneVoting(
+                    game,
+                    scene
+                );
+
+            },
+            duration * 1000
+        );
 }
 
 function awardVotingPoints(game, scene, winner) {
@@ -358,7 +764,7 @@ function moveToNextScene(game) {
             console.log(
                 `Сцена "${game.currentScene?.id ?? "none"}" не имеет следующей сцены — игра завершена.`
             );
-        
+            game.status = "finished";
             const results =
                 [...game.players.values()]
                     .map(player => ({
@@ -391,8 +797,6 @@ function moveToNextScene(game) {
             "scenes",
             nextSceneId
         );
-    
-    delete game.nextSceneId;
 
     // --------------------------------------------------
     // ЗАГРУЖАЕМ СЦЕНУ
@@ -591,12 +995,30 @@ function finishSceneVoting(game, scene) {
             }
         );
     
-        setTimeout(
-            () => {
-                moveToNextScene(game);
-            },
-            4000
-        );
+        game.transitionEndsAt =
+    Date.now() + 5000;
+
+game.transitionTimeout =
+    setTimeout(
+        () => {
+
+            game.transitionTimeout =
+                null;
+
+            game.transitionEndsAt =
+                null;
+
+            if (game.status !== "playing") {
+                return;
+            }
+
+            moveToNextScene(
+                game
+            );
+
+        },
+        5000
+    );
     
         return;
     }
@@ -638,7 +1060,25 @@ function finishSceneVoting(game, scene) {
             });
 
             // По истечении времени снова вызываем finishSceneVoting
-            setTimeout(() => finishSceneVoting(game, scene), revoteDuration * 1000);
+            game.votingTimeout =
+                setTimeout(
+                    () => {
+
+                        game.votingTimeout =
+                            null;
+
+                        if (game.status !== "playing") {
+                            return;
+                        }
+
+                        finishSceneVoting(
+                            game,
+                            scene
+                        );
+
+                    },
+                    revoteDuration * 1000
+                );
             return; // дальше не будем определять победителя сейчас
         }
 
@@ -694,11 +1134,29 @@ function finishSceneVoting(game, scene) {
         }
         );
 
+        game.transitionEndsAt =
+        Date.now() + 5000;
+    
+    game.transitionTimeout =
         setTimeout(
-        () => {
-            moveToNextScene(game);
-        },
-        5000
+            () => {
+    
+                game.transitionTimeout =
+                    null;
+    
+                game.transitionEndsAt =
+                    null;
+    
+                if (game.status !== "playing") {
+                    return;
+                }
+    
+                moveToNextScene(
+                    game
+                );
+    
+            },
+            5000
         );
 
         return;
@@ -743,20 +1201,34 @@ io.to(`game_${game.id}`).emit(
 // ПАУЗА ДЛЯ TRANSITION
 // --------------------------------------------------
 
-setTimeout(
-    () => {
+game.transitionEndsAt =
+    Date.now() + 5000;
 
-        moveToNextScene(game);
+game.transitionTimeout =
+    setTimeout(
+        () => {
 
-    },
-    5000
-);
+            game.transitionTimeout =
+                null;
+
+            game.transitionEndsAt =
+                null;
+
+            if (game.status !== "playing") {
+                return;
+            }
+
+            moveToNextScene(
+                game
+            );
+
+        },
+        5000
+    );
 
 return;
 
 }
-
-
 
 
 // --------------------------------------------------
@@ -1107,61 +1579,66 @@ io.on("connection", (socket) => {
     socket.on(
         "admin:create_game",
         () => {
-
+    
             const gameId =
                 generateGameCode();
-
-                const game = {
-
-                    id: gameId,
-                
-                    status: "lobby",
-                
-                    currentScene: null,
-                
-                    sceneTimer: null,
-                
-                    sceneTimerTimeout: null,
-                
-                    players: new Map(),
-                
-                    kickedPlayers: new Set()
-                
-                };
-
+    
+            const game = {
+    
+                id: gameId,
+    
+                status: "lobby",
+    
+                currentScene: null,
+    
+                sceneTimer: null,
+    
+                sceneTimerTimeout: null,
+    
+                transitionTimeout: null,
+    
+                transitionEndsAt: null,
+    
+                votingTimeout: null,
+    
+                voting: null,
+    
+                pauseState: null,
+    
+                players: new Map(),
+    
+                kickedPlayers: new Set()
+    
+            };
+    
             games.set(
                 gameId,
                 game
             );
-
+    
             socket.join(
                 `game_${gameId}`
             );
-
+    
             socket.gameId =
                 gameId;
-
+    
             socket.isAdmin =
                 true;
-
+    
             console.log(
-                `Создана игра: ${gameId}`
+                `Создана новая игра: ${gameId}`
             );
-
+    
             socket.emit(
                 "admin:game_created",
                 {
                     gameId
                 }
             );
-
+    
         }
     );
-
-
-        // ==================================================
-        // PLAYER: JOIN GAME
-        // ==================================================
 
         // ==================================================
         // PLAYER: JOIN GAME
@@ -1713,6 +2190,111 @@ socket.on(
         }
     );
 
+    // ==================================================
+    // ADMIN: PAUSE / RESUME GAME
+    // ==================================================
+
+    socket.on(
+        "admin:pause_game",
+        () => {
+
+            // ------------------------------------------
+            // Проверяем администратора
+            // ------------------------------------------
+
+            if (!socket.isAdmin) {
+
+                console.log(
+                    "Попытка поставить игру на паузу " +
+                    "не администратором"
+                );
+
+                return;
+            }
+
+
+            // ------------------------------------------
+            // Проверяем gameId
+            // ------------------------------------------
+
+            if (!socket.gameId) {
+                return;
+            }
+
+
+            const game =
+                games.get(
+                    socket.gameId
+                );
+
+
+            if (!game) {
+                return;
+            }
+
+
+            // ------------------------------------------
+            // PLAYING -> PAUSED
+            // ------------------------------------------
+
+            if (game.status === "playing") {
+
+                const success =
+                    pauseGame(game);
+
+                if (!success) {
+                    return;
+                }
+
+                socket.emit(
+                    "admin:pause_changed",
+                    {
+                        paused: true
+                    }
+                );
+
+                return;
+            }
+
+
+            // ------------------------------------------
+            // PAUSED -> PLAYING
+            // ------------------------------------------
+
+            if (game.status === "paused") {
+
+                const success =
+                    resumeGame(game);
+
+                if (!success) {
+                    return;
+                }
+
+                socket.emit(
+                    "admin:pause_changed",
+                    {
+                        paused: false
+                    }
+                );
+
+                return;
+            }
+
+
+            // ------------------------------------------
+            // Нельзя ставить lobby на паузу
+            // ------------------------------------------
+
+            socket.emit(
+                "admin:pause_error",
+                {
+                    message:
+                        "Поставить на паузу можно только запущенную игру."
+                }
+            );
+
+        }
+    );
 // ==================================================
 // ADMIN: KICK PLAYER
 // ==================================================

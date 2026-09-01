@@ -7,6 +7,7 @@ let voiceEnabled =
     localStorage.getItem("starTestQuest_voiceEnabled") !== "false";
 let currentScene = null;
 let currentVoice = null;
+let isGamePaused = false;
 
 let bugSearchState = {
     mistakes: 0,
@@ -290,6 +291,117 @@ console.log(
     "Код игры:",
     gameId
 );
+
+// ==================================================
+// PAUSE OVERLAY
+// ==================================================
+
+let pauseOverlay = null;
+
+function createPauseOverlay() {
+
+    if (pauseOverlay) {
+        return;
+    }
+
+    pauseOverlay = document.createElement("div");
+
+    pauseOverlay.id = "gamePauseOverlay";
+
+    pauseOverlay.innerHTML = `
+        <div class="pause-overlay-content">
+            <div class="pause-icon">
+                ⏸️
+            </div>
+
+            <div class="pause-title">
+                ИГРА НА ПАУЗЕ
+            </div>
+
+            <div class="pause-text">
+                Администратор временно приостановил игру
+            </div>
+
+            <div class="pause-waiting">
+                Пожалуйста, подождите...
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(
+        pauseOverlay
+    );
+}
+
+
+function showGamePause() {
+
+    createPauseOverlay();
+
+    isGamePaused = true;
+
+    pauseOverlay.classList.remove(
+        "hidden"
+    );
+
+    requestAnimationFrame(() => {
+
+        pauseOverlay.classList.add(
+            "active"
+        );
+
+    });
+
+    // Останавливаем локальный таймер
+    pauseSceneTimer();
+
+    // Останавливаем озвучку
+    stopVoice();
+
+    // Блокируем игровые кнопки
+    if (choiceButtons) {
+
+        choiceButtons
+            .querySelectorAll("button")
+            .forEach(button => {
+                button.disabled = true;
+            });
+
+    }
+
+    const bugButtons =
+        document.querySelectorAll(
+            "#bugButton, #normalButton"
+        );
+
+    bugButtons.forEach(button => {
+        button.disabled = true;
+    });
+}
+
+
+function hideGamePause() {
+
+    createPauseOverlay();
+
+    isGamePaused = false;
+
+    pauseOverlay.classList.remove(
+        "active"
+    );
+
+    setTimeout(() => {
+
+        if (!isGamePaused) {
+
+            pauseOverlay.classList.add(
+                "hidden"
+            );
+
+        }
+
+    }, 300);
+}
 
 function updateSceneTimer(seconds) {
 
@@ -918,6 +1030,7 @@ voiceToggle.addEventListener(
 
 let sceneTimerInterval = null;
 let sceneTimerEndsAt = null;
+let sceneTimerRemainingMs = null;
 
 function startSceneTimer(endsAt) {
 
@@ -932,7 +1045,7 @@ function startSceneTimer(endsAt) {
     }
 
     sceneTimerEndsAt = endsAt;
-
+    sceneTimerRemainingMs = null;
     function updateSceneTimer() {
 
         const remaining =
@@ -941,19 +1054,7 @@ function startSceneTimer(endsAt) {
                 sceneTimerEndsAt - Date.now()
             );
 
-        const seconds =
-            Math.ceil(
-                remaining / 1000
-            );
-
-        const minutes =
-            Math.floor(seconds / 60);
-
-        const secs =
-            seconds % 60;
-
-        sceneTimer.textContent =
-            `⏱ ${minutes}:${String(secs).padStart(2, "0")}`;
+        renderSceneTimerRemaining(remaining);
 
         if (remaining <= 0) {
 
@@ -977,24 +1078,76 @@ function startSceneTimer(endsAt) {
         );
 }
 
+function pauseSceneTimer() {
+
+    // Если таймер уже не запущен —
+    // ничего не делаем.
+    if (!sceneTimerEndsAt) {
+        return;
+    }
+
+    // Запоминаем оставшееся время.
+    sceneTimerRemainingMs =
+        Math.max(
+            0,
+            sceneTimerEndsAt - Date.now()
+        );
+
+    // Останавливаем интервал.
+    if (sceneTimerInterval) {
+
+        clearInterval(sceneTimerInterval);
+
+        sceneTimerInterval = null;
+    }
+
+    // Таймер больше не должен продолжать
+    // отсчитываться от старого endsAt.
+    sceneTimerEndsAt = null;
+
+    // Показываем зафиксированное время.
+    renderSceneTimerRemaining(
+        sceneTimerRemainingMs
+    );
+}
+
+function renderSceneTimerRemaining(milliseconds) {
+
+    if (!sceneTimer) {
+        return;
+    }
+
+    const seconds =
+        Math.max(
+            0,
+            Math.ceil(milliseconds / 1000)
+        );
+
+    const minutes =
+        Math.floor(seconds / 60);
+
+    const secs =
+        seconds % 60;
+
+    sceneTimer.textContent =
+        `⏱ ${minutes}:${String(secs).padStart(2, "0")}`;
+}
 
 function stopSceneTimer() {
 
     if (sceneTimerInterval) {
 
-        clearInterval(
-            sceneTimerInterval
-        );
+        clearInterval(sceneTimerInterval);
 
         sceneTimerInterval = null;
     }
 
-    if (sceneTimer) {
-        sceneTimer.textContent =
-            "⏱ 0:00";
-    }
-
     sceneTimerEndsAt = null;
+    sceneTimerRemainingMs = null;
+
+    if (sceneTimer) {
+        sceneTimer.textContent = "⏱ 0:00";
+    }
 }
 
 // ==================================================
@@ -1318,6 +1471,7 @@ socket.on(
         status,
         scene,
         sceneState,
+        pauseState,
         choiceId,
         timer,
         voting
@@ -1372,14 +1526,87 @@ socket.on(
                     `Твоя команда: ${teamNames[team] || team}`;
             }
         }
+        // -------------------------------------------------
+        // 4️⃣ Восстанавливаем таймер сцены
+        // -------------------------------------------------
 
-        /* -------------------------------------------------
-         * 4️⃣ Восстанавливаем таймер сцены
-         * ------------------------------------------------- */
-        if (timer && timer.endsAt) {
-            startSceneTimer(timer.endsAt);
+        if (
+            status === "playing" &&
+            timer &&
+            timer.endsAt
+        ) {
+
+            startSceneTimer(
+                timer.endsAt
+            );
+
+        } else if (
+            status === "paused" &&
+            timer
+        ) {
+
+            // Во время паузы сервер должен прислать
+            // оставшееся время.
+            //
+            // Поддерживаем два варианта:
+            // timer.remainingMs
+            // timer.remainingSeconds
+
+            if (
+                typeof timer.remainingMs === "number"
+            ) {
+
+                sceneTimerRemainingMs =
+                    Math.max(
+                        0,
+                        timer.remainingMs
+                    );
+
+                renderSceneTimerRemaining(
+                    sceneTimerRemainingMs
+                );
+
+            } else if (
+                typeof timer.remainingSeconds === "number"
+            ) {
+
+                sceneTimerRemainingMs =
+                    Math.max(
+                        0,
+                        timer.remainingSeconds * 1000
+                    );
+
+                renderSceneTimerRemaining(
+                    sceneTimerRemainingMs
+                );
+
+            } else if (
+                timer.endsAt
+            ) {
+
+                // Запасной вариант:
+                // если сервер всё ещё прислал endsAt.
+                startSceneTimer(
+                    timer.endsAt
+                );
+
+                pauseSceneTimer();
+
+            } else {
+
+                console.warn(
+                    "⚠️ Игра на паузе, но сервер не прислал оставшееся время таймера:",
+                    timer
+                );
+
+                stopSceneTimer();
+
+            }
+
         } else {
+
             stopSceneTimer();
+
         }
 
         /* -------------------------------------------------
@@ -1388,6 +1615,19 @@ socket.on(
         if (!scene) {
             console.warn("⚪️ Сцена не пришла – игрок, вероятно, в лобби.");
             return;
+        }
+        // -------------------------------------------------
+        // Игра была на паузе во время переподключения
+        // ------------------------------------- ------------
+
+        if (status === "paused") {
+
+            console.log(
+                "⏸️ Игрок восстановлен во время паузы"
+            );
+
+            showGamePause();
+
         }
 
         /* -------------------------------------------------
@@ -1533,7 +1773,48 @@ socket.on(
 );
 
 
+function restoreGameControlsAfterResume() {
 
+    if (isGamePaused) {
+        return;
+    }
+
+    // ------------------------------------------
+    // BUG SEARCH
+    // ------------------------------------------
+
+    if (
+        currentScene &&
+        currentScene.type === "bug_search"
+    ) {
+
+        if (
+            bugSearchState &&
+            !bugSearchState.finished
+        ) {
+
+            const bugButton =
+                document.getElementById(
+                    "bugButton"
+                );
+
+            const normalButton =
+                document.getElementById(
+                    "normalButton"
+                );
+
+            if (bugButton) {
+                bugButton.disabled = false;
+            }
+
+            if (normalButton) {
+                normalButton.disabled = false;
+            }
+
+        }
+
+    }
+}
 
 // ==================================================
 // JOIN ERROR
@@ -2352,6 +2633,87 @@ socket.on(
 
             }
         );
+
+    }
+);
+
+// ==================================================
+// GAME PAUSED
+// ==================================================
+
+socket.on(
+    "game:paused",
+    ({ gameId }) => {
+
+        console.log(
+            "⏸️ Игра поставлена на паузу:",
+            gameId
+        );
+
+        showGamePause();
+
+    }
+);
+
+// ==================================================
+// GAME RESUMED
+// ==================================================
+
+socket.on(
+    "game:resumed",
+    ({
+        gameId,
+        timer,
+        voting
+    }) => {
+
+        console.log(
+            "▶️ Игра продолжена:",
+            {
+                gameId,
+                timer,
+                voting
+            }
+        );
+
+        hideGamePause();
+
+        restoreGameControlsAfterResume();
+
+        if (
+            timer &&
+            timer.endsAt
+        ) {
+
+            startSceneTimer(
+                timer.endsAt
+            );
+
+        } else if (
+            timer &&
+            typeof timer.remainingSeconds === "number"
+        ) {
+
+            startSceneTimer(
+                Date.now() +
+                timer.remainingSeconds * 1000
+            );
+
+        } else if (
+            timer &&
+            typeof timer.remainingMs === "number"
+        ) {
+
+            startSceneTimer(
+                Date.now() +
+                timer.remainingMs
+            );
+
+        } else {
+
+            stopSceneTimer();
+
+        }
 
     }
 );

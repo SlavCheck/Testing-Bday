@@ -43,7 +43,10 @@ const startGameButton =
     document.getElementById(
         "startGameButton"
     );
-
+const pauseGameButton =
+    document.getElementById(
+        "pauseGameButton"
+    );
 
 const gameCodeElement =
     document.getElementById(
@@ -490,9 +493,117 @@ socket.on(
         startGameButton.textContent =
             "ИГРА ИДЁТ";
 
+
+        startGameButton.disabled =
+            true;
+
+
+        pauseGameButton.classList.remove(
+            "hidden"
+        );
+
+
+        pauseGameButton.disabled =
+            false;
+
+
+        pauseGameButton.textContent =
+            "⏸ ПАУЗА";
+
     }
 );
 
+// ==================================================
+// PAUSE / RESUME GAME
+// ==================================================
+
+pauseGameButton.addEventListener(
+    "click",
+    () => {
+
+        const isPaused =
+            pauseGameButton.dataset.paused === "true";
+
+
+        const message =
+            isPaused
+                ? "Продолжить игру?"
+                : "Поставить игру на паузу?";
+
+
+        const confirmed =
+            confirm(message);
+
+
+        if (!confirmed) {
+            return;
+        }
+
+
+        pauseGameButton.disabled =
+            true;
+
+
+        socket.emit(
+            "admin:pause_game"
+        );
+
+    }
+);
+
+socket.on(
+    "admin:pause_changed",
+    ({ paused }) => {
+
+        pauseGameButton.disabled =
+            false;
+
+
+        pauseGameButton.dataset.paused =
+            String(paused);
+
+
+        if (paused) {
+
+            pauseGameButton.textContent =
+                "▶ ПРОДОЛЖИТЬ";
+
+
+            adminStatus.textContent =
+                "⏸ ИГРА НА ПАУЗЕ";
+
+        } else {
+
+            pauseGameButton.textContent =
+                "⏸ ПАУЗА";
+
+
+            adminStatus.textContent =
+                "🚀 ИГРА ПРОДОЛЖАЕТСЯ";
+
+        }
+
+    }
+);
+
+socket.on(
+    "admin:pause_error",
+    ({ message }) => {
+
+        console.error(
+            message
+        );
+
+
+        pauseGameButton.disabled =
+            false;
+
+
+        adminStatus.textContent =
+            message;
+
+    }
+);
 
 // ==================================================
 // HTML ESCAPE
