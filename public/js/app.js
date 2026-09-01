@@ -1780,6 +1780,47 @@ function restoreGameControlsAfterResume() {
     }
 
     // ------------------------------------------
+    // ОБЫЧНАЯ СЦЕНА
+    // ------------------------------------------
+
+    if (
+        currentScene &&
+        currentScene.type !== "bug_search"
+    ) {
+
+        if (choiceButtons) {
+
+            const buttons =
+                choiceButtons.querySelectorAll("button");
+
+            buttons.forEach(button => {
+
+                // Если игрок уже сделал выбор,
+                // оставляем все кнопки заблокированными.
+                if (
+                    choiceButtons.querySelector(
+                        "button.selected"
+                    )
+                ) {
+
+                    button.disabled = true;
+
+                } else {
+
+                    // Если выбора ещё не было —
+                    // после паузы снова разрешаем выбор.
+                    button.disabled = false;
+
+                }
+
+            });
+
+        }
+
+        return;
+    }
+
+    // ------------------------------------------
     // BUG SEARCH
     // ------------------------------------------
 
