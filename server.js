@@ -93,6 +93,8 @@ function startSceneTimer(game, duration) {
         }, duration * 1000);
 }
 
+
+
 function generateGameCode() {
 
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -115,6 +117,46 @@ function generateGameCode() {
 
     return code;
 }
+
+// -------------------------------------------------
+// SEND PLAYER STATE (для восстановления)
+// -------------------------------------------------
+function sendPlayerState(socket, game, player) {
+    socket.emit("player:restore_state", {
+        gameId: game.id,
+
+        nickname: player.nickname,
+
+        team: player.team,
+        score: player.score,
+
+        status: game.status,
+
+        // <-- ОБЯЗАТЕЛЬНО! Сцена, в которой находится игра
+        scene: game.currentScene,
+
+        // Состояние внутри сцены (может быть null)
+        sceneState: player.sceneState,
+
+        // Выбор игрока, если он уже сделан
+        choiceId:
+            player.sceneState?.choiceId ??
+            player.currentChoice ??
+            null,
+
+        timer: game.sceneTimer,
+
+        voting: game.voting ? {
+            active: game.voting.active,
+            endsAt: game.voting.endsAt,
+            round: game.voting.round,
+            allowedChoices: game.voting.allowedChoices
+                ? [...game.voting.allowedChoices]
+                : null
+        } : null
+    });
+}
+
 
 
 function broadcastLobbyUpdate(game) {
@@ -1117,295 +1159,165 @@ io.on("connection", (socket) => {
     );
 
 
-    // ==================================================
-    // PLAYER: JOIN GAME
-    // ==================================================
+        // ==================================================
+        // PLAYER: JOIN GAME
+        // ==================================================
 
-    socket.on(
-        "player:join_game",
-        ({ gameId, nickname, playerId }) => {
-    
-            const normalizedGameId =
-                gameId.trim().toUpperCase();
-    
-            const normalizedNickname =
-                nickname.trim();
-    
-    
-            const game =
-                games.get(
-                    normalizedGameId
-                );
-    
-    
-            // ------------------------------------------
-            // ИГРА НЕ НАЙДЕНА
-            // ------------------------------------------
-    
-            if (!game) {
-    
-                socket.emit(
-                    "player:join_error",
-                    {
-                        message:
-                            "Игра с таким кодом не найдена."
-                    }
-                );
-    
-                return;
-            }
-    
-    
-            // ------------------------------------------
-            // ИГРА УЖЕ НАЧАЛАСЬ
-            // ------------------------------------------
-    
-            if (game.status !== "lobby") {
-    
-                socket.emit(
-                    "player:join_error",
-                    {
-                        message:
-                            "Игра уже началась."
-                    }
-                );
-    
-                return;
-            }
-    
-    
-            // ------------------------------------------
-            // ПРОВЕРКА НИКА
-            // ------------------------------------------
-    
-            if (!normalizedNickname) {
-    
-                socket.emit(
-                    "player:join_error",
-                    {
-                        message:
-                            "Введите никнейм."
-                    }
-                );
-    
-                return;
-            }
-    
-    
-            // ------------------------------------------
-            // ПРОВЕРКА PLAYER ID
-            // ------------------------------------------
-    
-            if (!playerId) {
-    
-                socket.emit(
-                    "player:join_error",
-                    {
-                        message:
-                            "Не удалось определить игрока. Обновите страницу."
-                    }
-                );
-    
-                return;
-            }
-            if (
-                game.kickedPlayers.has(
-                    playerId
-                )
-            ) {
-            
-                socket.emit(
-                    "player:join_error",
-                    {
-                        message:
-                            "Вы были исключены из игры администратором."
-                    }
-                );
-            
-                return;
-            }
-    
-    
-            // ------------------------------------------
-            // ИЩЕМ СУЩЕСТВУЮЩЕГО ИГРОКА
-            // ------------------------------------------
-    
-            const existingPlayer =
-                [...game.players.values()]
-                    .find(
-                        player =>
-                            player.id === playerId
+        // ==================================================
+        // PLAYER: JOIN GAME
+        // ==================================================
+        socket.on(
+            "player:join_game",
+            ({ gameId, nickname, playerId }) => {
+
+                /* ----------------------------------------------------------------------
+                * 1️⃣  Подготовка и базовая валидация входных параметров
+                * ---------------------------------------------------------------------- */
+                const normalizedGameId    = gameId?.trim().toUpperCase() ?? "";
+                const normalizedNick     = nickname?.trim() ?? "";
+                const normalizedPlayerId = playerId ?? "";
+
+                // -----------------------------------------
+                // Игра должна существовать
+                // -----------------------------------------
+                const game = games.get(normalizedGameId);
+                if (!game) {
+                    socket.emit("player:join_error", {
+                        message: "Игра с таким кодом не найдена."
+                    });
+                    return;
+                }
+
+                /* ----------------------------------------------------------------------
+                * 2️⃣  Переподключение (уже известный playerId)
+                * ---------------------------------------------------------------------- */
+                const existingPlayer = game.players.get(normalizedPlayerId);
+                if (existingPlayer) {
+
+                    console.log(
+                        `Игрок ${existingPlayer.nickname} (${existingPlayer.id}) ` +
+                        `переподключается к партии ${normalizedGameId}`
                     );
-    
-    
-            // ------------------------------------------
-            // ЕСЛИ ИГРОК УЖЕ ЕСТЬ
-            // ЭТО ПЕРЕПОДКЛЮЧЕНИЕ
-            // ------------------------------------------
-    
-            if (existingPlayer) {
-    
+
+                    // Обновляем сведения о соединении
+                    existingPlayer.socketId = socket.id;
+                    existingPlayer.kicked   = false;          // если был кикнут – снимаем отметку
+                    if (game.kickedPlayers) {
+                        game.kickedPlayers.delete(normalizedPlayerId);
+                    }
+
+                    socket.join(`game_${normalizedGameId}`);
+                    socket.gameId = normalizedGameId;
+                    socket.isAdmin = false;
+
+                    // Сообщаем клиенту, что это восстановление
+                    socket.emit("player:joined", {
+                        gameId: normalizedGameId,
+                        nickname: existingPlayer.nickname,
+                        restored: true           // <-- важный флаг
+                    });
+
+                    // Отсылаем полное состояние игрока
+                    sendPlayerState(socket, game, existingPlayer);
+
+                    // Обновляем лист лобби
+                    broadcastLobbyUpdate(game);
+                    return;
+                }
+
+                /* ----------------------------------------------------------------------
+                * 3️⃣  Новый игрок (playerId ещё не известен в игре)
+                * ---------------------------------------------------------------------- */
+
+                // Игра должна находиться в лобби
+                if (game.status !== "lobby") {
+                    socket.emit("player:join_error", {
+                        message: "Игра уже началась."
+                    });
+                    return;
+                }
+
+                // Ник обязателен
+                if (!normalizedNick) {
+                    socket.emit("player:join_error", {
+                        message: "Введите никнейм."
+                    });
+                    return;
+                }
+
+                // playerId обязателен (должен быть в localStorage)
+                if (!normalizedPlayerId) {
+                    socket.emit("player:join_error", {
+                        message: "Не удалось определить игрока. Обновите страницу."
+                    });
+                    return;
+                }
+
+                // Проверка на исключение администратором
+                if (game.kickedPlayers && game.kickedPlayers.has(normalizedPlayerId)) {
+                    console.log(
+                        `Игрок ${normalizedPlayerId} попытался вернуться после исключения`
+                    );
+                    socket.emit("player:join_error", {
+                        message: "Вы были исключены из игры администратором."
+                    });
+                    return;
+                }
+
+                // Ник должен быть уникален внутри партии
+                const nickTaken = [...game.players.values()].some(p =>
+                    p.nickname?.toLowerCase() === normalizedNick.toLowerCase()
+                );
+                if (nickTaken) {
+                    socket.emit("player:join_error", {
+                        message: "Такой никнейм уже занят."
+                    });
+                    return;
+                }
+
+                // Создаём объект игрока
+                const player = {
+                    id: normalizedPlayerId,
+                    socketId: socket.id,
+                    nickname: normalizedNick,
+                    team: null,
+                    score: 0,
+                    currentChoice: null,
+                    sceneState: null,
+                    kicked: false
+                };
+
+                game.players.set(normalizedPlayerId, player);
+
+                // Привязываем сокет к комнате
+                socket.join(`game_${normalizedGameId}`);
+                socket.gameId = normalizedGameId;
+                socket.isAdmin = false;
+
                 console.log(
-                    `Игрок ${existingPlayer.nickname} переподключился`
+                    `Игрок ${normalizedNick} вошёл в игру ${normalizedGameId}`
                 );
-    
-    
-                // Обновляем socket
-    
-                existingPlayer.socketId =
-                    socket.id;
-    
-    
-                socket.join(
-                    `game_${normalizedGameId}`
-                );
-    
-    
-                socket.gameId =
-                    normalizedGameId;
-    
-                socket.isAdmin =
-                    false;
-    
-    
-                // Сообщаем игроку, что он снова подключён
-    
+
+                // --------------------- ОТПРАВЛЯЕМ СОБЫТИЕ О ПОДКЛЮЧЕНИИ ---------------------
                 socket.emit(
                     "player:joined",
                     {
-                        gameId:
-                            normalizedGameId,
-    
-                        nickname:
-                            existingPlayer.nickname
+                        gameId: normalizedGameId,
+                        nickname: normalizedNick,   // <-- правильный ник
+                        restored: false             // <-- новый игрок, а не восстановление
                     }
                 );
-    
-    
-                // Если команда уже выбрана,
-                // возвращаем игрока на waiting screen
-    
-                if (existingPlayer.team) {
-    
-                    socket.emit(
-                        "player:team_selected",
-                        {
-                            team:
-                                existingPlayer.team
-                        }
-                    );
-    
-                }
-    
-    
-                broadcastLobbyUpdate(
-                    game
-                );
-    
-    
-                return;
-            }
-    
-    
-            // ------------------------------------------
-            // ПРОВЕРКА УНИКАЛЬНОСТИ НИКА
-            // ------------------------------------------
-    
-            const nicknameExists =
-                [...game.players.values()]
-                    .some(
-                        player =>
-                            player.nickname.toLowerCase() ===
-                            normalizedNickname.toLowerCase()
-                    );
-    
-    
-            if (nicknameExists) {
-    
-                socket.emit(
-                    "player:join_error",
-                    {
-                        message:
-                            "Такой никнейм уже занят."
-                    }
-                );
-    
-                return;
-            }
-    
-    
-            // ------------------------------------------
-            // СОЗДАЁМ НОВОГО ИГРОКА
-            // ------------------------------------------
-    
-            const player = {
-    
-                id:
-                    playerId,
-    
-                socketId:
-                    socket.id,
-    
-                nickname:
-                    normalizedNickname,
-    
-                team:
-                    null,
-    
-                score:
-                    0,
-                
-                currentChoice:
-                    null,
 
-                sceneState: null,
-    
-                kicked:
-                    false    
-            };
-    
-    
-            game.players.set(
-                playerId,
-                player
-            );
-    
-    
-            socket.join(
-                `game_${normalizedGameId}`
-            );
-    
-    
-            socket.gameId =
-                normalizedGameId;
-    
-            socket.isAdmin =
-                false;
-    
-    
-            console.log(
-                `Игрок ${normalizedNickname} вошёл в игру ${normalizedGameId}`
-            );
-    
-    
-            socket.emit(
-                "player:joined",
-                {
-                    gameId:
-                        normalizedGameId,
-    
-                    nickname:
-                        normalizedNickname
-                }
-            );
-    
-    
-            broadcastLobbyUpdate(
-                game
-            );
-    
-        }
-    );
+                // Обновляем список игроков в лобби
+                broadcastLobbyUpdate(game);
+
+                // Дальше ничего не делаем – дальше клиент получит
+                // остальные события (game:started и т.д.) от сервера.
+                return;
+            }
+        );
+
+
 
 
     // ==================================================

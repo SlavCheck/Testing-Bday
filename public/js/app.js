@@ -3,11 +3,11 @@ const socket = io();
 // ==================================================
 // VOICE
 // ==================================================
-
 let voiceEnabled =
     localStorage.getItem("starTestQuest_voiceEnabled") !== "false";
 let currentScene = null;
 let currentVoice = null;
+
 let bugSearchState = {
     mistakes: 0,
     found: 0,
@@ -54,7 +54,8 @@ let playerId =
     localStorage.getItem(
         "starTestQuest_playerId"
     );
-
+let isRestoringGame = false;
+let isRestoredSession = false;
 if (!playerId) {
 
     playerId =
@@ -92,6 +93,12 @@ console.log("app.js загружен");
 document.addEventListener(
     "click",
     () => {
+
+        // При восстановлении игры приветственная
+        // озвучка больше не должна запускаться.
+        if (isRestoredSession) {
+            return;
+        }
 
         if (!welcomeVoice) {
             return;
@@ -254,6 +261,9 @@ const teamStatus =
 const teamButtons =
     document.querySelectorAll(".team-button");
 
+const characterName =
+    document.getElementById("characterName");   // <-- добавляем
+
 // ==================================================
 // GAME CODE FROM URL
 // ==================================================
@@ -266,29 +276,20 @@ const params =
 const gameId =
     params.get("game");
 
+isRestoringGame =
+    Boolean(
+        gameId &&
+        playerId &&
+        savedNickname
+    );
+
+isRestoredSession = isRestoringGame;
+
 
 console.log(
     "Код игры:",
     gameId
 );
-
-// ==================================================
-// SCENE TIMER
-// ==================================================
-
-function stopSceneTimer() {
-
-    if (sceneTimerInterval) {
-
-        clearInterval(
-            sceneTimerInterval
-        );
-
-        sceneTimerInterval = null;
-
-    }
-
-}
 
 function updateSceneTimer(seconds) {
 
@@ -314,52 +315,6 @@ function updateSceneTimer(seconds) {
         ).padStart(2, "0")}`;
 
 }
-
-
-function startSceneTimer(endsAt) {
-
-    stopSceneTimer();
-
-    if (!endsAt) {
-
-        updateSceneTimer(0);
-
-        return;
-
-    }
-
-    function tick() {
-
-        const remaining =
-            Math.max(
-                0,
-                Math.ceil(
-                    (endsAt - Date.now()) / 1000
-                )
-            );
-
-        updateSceneTimer(
-            remaining
-        );
-
-        if (remaining <= 0) {
-
-            stopSceneTimer();
-
-        }
-
-    }
-
-    tick();
-
-    sceneTimerInterval =
-        setInterval(
-            tick,
-            250
-        );
-
-}
-
 // ==================================================
 // ShowTrasitionScene
 // ==================================================
@@ -485,7 +440,7 @@ function transitionToScene(callback) {
 // ==================================================
 // RENDER BUG SEARCH
 // ==================================================
-function renderBugSearchScene(scene) {
+function renderBugSearchScene(scene, savedState = null) {
 
     console.log(
         "Запускаем сцену поиска багов:",
@@ -499,21 +454,26 @@ function renderBugSearchScene(scene) {
     // ------------------------------------------
     // СОСТОЯНИЕ
     // ------------------------------------------
-
     bugSearchState = {
 
-        mistakes: 0,
-
-        found: 0,
-
-        finished: false,
-
-        cards: scene.cards || [],
-
-        currentIndex: 0,
-
-        scene: scene
-
+        mistakes:
+            savedState?.mistakes || 0,
+    
+        found:
+            savedState?.found || 0,
+    
+        finished:
+            savedState?.finished || false,
+    
+        cards:
+            scene.cards || [],
+    
+        currentIndex:
+            savedState?.currentIndex || 0,
+    
+        scene:
+            scene
+    
     };
 
 
@@ -1050,11 +1010,6 @@ socket.on(
             socket.id
         );
 
-
-        // ------------------------------------------
-        // ПРОБУЕМ ВОССТАНОВИТЬ ИГРОКА
-        // ------------------------------------------
-
         if (
             gameId &&
             playerId &&
@@ -1062,16 +1017,21 @@ socket.on(
         ) {
 
             console.log(
-                "Пробуем восстановить игрока..."
+                "Пробуем восстановить игрока:",
+                {
+                    gameId,
+                    playerId,
+                    nickname: savedNickname
+                }
             );
 
+            isRestoringGame = true;
 
             socket.emit(
                 "player:join_game",
                 {
                     gameId,
-                    nickname:
-                        savedNickname,
+                    nickname: savedNickname,
                     playerId
                 }
             );
@@ -1105,25 +1065,16 @@ nicknameInput.addEventListener(
     }
 );
 
-
 function joinGame() {
 
     console.log(
         "Попытка входа в игру"
     );
 
-
     const nickname =
         nicknameInput.value.trim();
 
-    localStorage.setItem(
-        "starTestQuest_nickname",
-        nickname
-    );
-
-
     errorElement.textContent = "";
-
 
     if (!gameId) {
 
@@ -1133,7 +1084,6 @@ function joinGame() {
         return;
     }
 
-
     if (!nickname) {
 
         errorElement.textContent =
@@ -1142,24 +1092,29 @@ function joinGame() {
         return;
     }
 
+    // Сохраняем только корректный никнейм
+    localStorage.setItem(
+        "starTestQuest_nickname",
+        nickname
+    );
 
-    joinButton.disabled =
-        true;
+    savedNickname = nickname;
+
+    joinButton.disabled = true;
 
     joinButton.textContent =
         "Подключение...";
 
-
-        socket.emit(
-            "player:join_game",
-            {
-                gameId,
-                nickname,
-                playerId
-            }
-        );
-
+    socket.emit(
+        "player:join_game",
+        {
+            gameId,
+            nickname,
+            playerId
+        }
+    );
 }
+
 
 
 // ==================================================
@@ -1168,47 +1123,416 @@ function joinGame() {
 
 socket.on(
     "player:joined",
-    ({ nickname }) => {
+    ({
+        nickname,
+        restored = false,
+        team = null,
+        gameStarted = false,
+        scene = null,
+        timer = null,
+        bugSearch = null
+    }) => {
 
-        console.log("Игрок вошёл:", nickname);
+        console.log(
+            "Игрок вошёл:",
+            {
+                nickname,
+                restored,
+                team,
+                gameStarted,
+                scene,
+                timer,
+                bugSearch
+            }
+        );
 
-        if (welcomeVoice) {
-            welcomeVoice.pause();
-            welcomeVoice.currentTime = 0;
+        // ==========================================
+        // СОХРАНЯЕМ НИКНЕЙМ
+        // ==========================================
+
+        if (nickname) {
+
+            savedNickname = nickname;
+
+            localStorage.setItem(
+                "starTestQuest_nickname",
+                nickname
+            );
+
+            if (playerNickname) {
+                playerNickname.textContent = nickname;
+            }
+
+        } else if (savedNickname && playerNickname) {
+
+            playerNickname.textContent =
+                savedNickname;
+
         }
 
-        playerNickname.textContent = nickname;
 
-        // Скрываем все экраны
-        joinScreen.classList.add("hidden");
+        // ==========================================
+        // ИГРОК УСПЕШНО ВОШЁЛ
+        // ==========================================
+
+        isRestoringGame = false;
+
+        // Очень важно:
+        // после успешного ответа сервера
+        // экран ввода логина больше не показываем.
+
+        if (joinScreen) {
+            joinScreen.classList.add("hidden");
+        }
+
+
+        // ==========================================
+        // ВОССТАНОВЛЕНИЕ
+        // ==========================================
+
+        if (restored) {
+
+            console.log(
+                "ИГРОК ВОССТАНОВЛЕН"
+            );
+
+
+            // ------------------------------------------
+            // Восстанавливаем команду
+            // ------------------------------------------
+
+            if (team) {
+
+                const teamNames = {
+
+                    strategist: "Стратеги",
+                    joker: "Шутники",
+                    critic: "Критики"
+
+                };
+
+                selectedTeamText.textContent =
+                    `Твоя команда: ${
+                        teamNames[team] || team
+                    }`;
+
+            }
+
+
+            // ------------------------------------------
+            // Игра уже началась
+            // ------------------------------------------
+
+            if (gameStarted) {
+
+                console.log(
+                    "Игра уже идёт — ждём восстановленную сцену."
+                );
+
+                lobbyScreen.classList.add("hidden");
+                teamScreen.classList.add("hidden");
+                waitingScreen.classList.add("hidden");
+
+                // game:started должен прийти от сервера
+                // и уже показать gameScreen.
+
+                return;
+            }
+
+
+            // ------------------------------------------
+            // Игра ещё не началась
+            // ------------------------------------------
+
+            lobbyScreen.classList.add("hidden");
+            teamScreen.classList.add("hidden");
+            gameScreen.classList.add("hidden");
+
+            waitingScreen.classList.remove("hidden");
+
+            return;
+        }
+
+
+        // ==========================================
+        // НОВЫЙ ИГРОК
+        // ==========================================
+
+        if (welcomeVoice) {
+
+            welcomeVoice.pause();
+            welcomeVoice.currentTime = 0;
+
+        }
+
+
         lobbyScreen.classList.add("hidden");
         waitingScreen.classList.add("hidden");
         gameScreen.classList.add("hidden");
 
-        // Показываем выбор команды
         teamScreen.classList.remove("hidden");
 
-        // ------------------------------------------
-        // ОЗВУЧКА ВЫБОРА КОМАНДЫ
-        // ------------------------------------------
-        if (voiceEnabled && teamVoice) {
+
+        if (
+            voiceEnabled &&
+            teamVoice
+        ) {
+
             stopVoice();
-        
-            currentVoice = teamVoice;
-        
+
+            currentVoice =
+                teamVoice;
+
             teamVoice.currentTime = 0;
-        
-            teamVoice.play().catch(error => {
-                console.warn(
-                    "Не удалось запустить озвучку выбора команды:",
-                    error
-                );
-            });
+
+            teamVoice.play()
+                .catch(error => {
+
+                    console.warn(
+                        "Не удалось запустить озвучку выбора команды:",
+                        error
+                    );
+
+                });
+
         }
 
-        console.log("Игрок находится на экране выбора команды.");
+
+        console.log(
+            "Новый игрок находится на экране выбора команды."
+        );
+
     }
 );
+
+// ==================================================
+// PLAYER: RESTORE STATE
+// ==================================================
+socket.on(
+    "player:restore_state",
+    ({
+        gameId,
+        nickname,
+        team,
+        score,
+        status,
+        scene,
+        sceneState,
+        choiceId,
+        timer,
+        voting
+    }) => {
+
+        console.log(
+            "🟢 Восстановлено состояние игрока:",
+            {
+                gameId,
+                nickname,
+                team,
+                score,
+                status,
+                sceneId: scene?.id,
+                sceneState,
+                choiceId,
+                timer,
+                voting
+            }
+        );
+
+        /* -------------------------------------------------
+         * 1️⃣ Сохраняем ник (в UI и localStorage)
+         * ------------------------------------------------- */
+        if (nickname) {
+            savedNickname = nickname;
+            localStorage.setItem("starTestQuest_nickname", nickname);
+            if (playerNickname) playerNickname.textContent = nickname;
+        }
+
+        /* -------------------------------------------------
+         * 2️⃣ Отключаем все стартовые экраны, оставляем только игровую
+         * ------------------------------------------------- */
+        joinScreen?.classList.add("hidden");
+        lobbyScreen?.classList.add("hidden");
+        teamScreen?.classList.add("hidden");
+        waitingScreen?.classList.add("hidden");
+        kickedScreen?.classList.add("hidden");
+        gameScreen?.classList.remove("hidden");
+
+        /* -------------------------------------------------
+         * 3️⃣ Восстанавливаем команду (если уже выбрана)
+         * ------------------------------------------------- */
+        if (team) {
+            const teamNames = {
+                strategist: "Стратеги",
+                joker: "Шутники",
+                critic: "Критики"
+            };
+            if (selectedTeamText) {
+                selectedTeamText.textContent =
+                    `Твоя команда: ${teamNames[team] || team}`;
+            }
+        }
+
+        /* -------------------------------------------------
+         * 4️⃣ Восстанавливаем таймер сцены
+         * ------------------------------------------------- */
+        if (timer && timer.endsAt) {
+            startSceneTimer(timer.endsAt);
+        } else {
+            stopSceneTimer();
+        }
+
+        /* -------------------------------------------------
+         * 5️⃣ Если сцена не пришла (обычно речь о лобби) – выходим
+         * ------------------------------------------------- */
+        if (!scene) {
+            console.warn("⚪️ Сцена не пришла – игрок, вероятно, в лобби.");
+            return;
+        }
+
+        /* -------------------------------------------------
+         * 6️⃣ Сохраняем сцену в глобальную переменную
+         * ------------------------------------------------- */
+        currentScene = scene;
+
+       /* -------------------------------------------------
+         * 7️⃣  Специальный рендер для каждой категории сцен
+         * ------------------------------------------------- */
+
+        // -------------------------------------------------
+        // 7.1 Обычная (не bug_search) сцена
+        // -------------------------------------------------
+        if (scene.type !== "bug_search") {
+
+            // ---------- ФОН ----------
+            if (gameBackground && scene.background) {
+                gameBackground.style.backgroundImage = `url("${scene.background}")`;
+            }
+
+            // ---------- ПЕРСОНАЖИ ----------
+            if (charactersLayer) {
+                charactersLayer.innerHTML = "";
+                const chars = scene.characters ||
+                    (scene.character ? [scene.character] : []);
+                chars.forEach(ch => {
+                    const frame = document.createElement("div");
+                    frame.className = "character-frame";
+
+                    const img = document.createElement("img");
+                    img.className = "character-avatar";
+                    img.src = ch.image;
+                    img.alt = ch.name || "";
+
+                    const name = document.createElement("div");
+                    name.className = "character-frame-name";
+                    name.textContent = ch.name || "";
+
+                    frame.appendChild(img);
+                    frame.appendChild(name);
+                    charactersLayer.appendChild(frame);
+                });
+            }
+
+            // ---------- ТЕКСТ ----------
+            if (dialogueText) {
+                dialogueText.textContent = scene.text || "";
+            }
+
+            // ---------- ОЗВУЧКА ----------
+            if (scene.voice) {
+                playVoice(scene.voice);
+            }
+
+            // ---------- КНОПКИ ВЫБОРА ----------
+            if (choiceButtons) {
+                choiceButtons.innerHTML = "";
+                (scene.choices || []).forEach(choice => {
+                    const btn = document.createElement("button");
+                    btn.className = "game-choice-button";
+                    btn.textContent = choice.text;
+                    btn.dataset.choiceId = choice.id;
+
+                    // Если уже был сделан выбор – отмечаем и блокируем
+                    if (choiceId && choiceId === choice.id) {
+                        btn.classList.add("selected");
+                        btn.disabled = true;
+                    }
+
+                    btn.addEventListener("click", () => {
+                        console.log("🟢 Выбран вариант:", choice.id);
+                        markSelectedButton(btn, ".choice-buttons");
+                        // блокируем все кнопки, чтобы избежать двойных кликов
+                        choiceButtons.querySelectorAll("button")
+                            .forEach(b => b.disabled = true);
+                        socket.emit("player:choice", { choiceId: choice.id });
+                    });
+
+                    choiceButtons.appendChild(btn);
+                });
+            }
+
+            // ---------- ВОССТАНОВЛЕНИЕ ГОЛОСОВАНИЯ ----------
+            if (voting && voting.active) {
+                console.log("🔔 Восстанавливаем активное голосование", voting);
+                if (choiceId) {
+                    choiceButtons.querySelectorAll("button")
+                        .forEach(b => {
+                            if (b.dataset.choiceId !== choiceId) b.disabled = true;
+                        });
+                }
+            }
+
+            // ---------- ДЕЛАЕМ ПАНЕЛЬ ДИАЛОГА ВИДИМОЙ ----------
+            if (dialoguePanel) {
+                dialoguePanel.classList.remove("hidden");
+            }
+        }
+
+        // -------------------------------------------------
+        // 7.2  BUG‑SEARCH СЦЕНА
+        // -------------------------------------------------
+        else {
+
+            // Фон (тот же, что и у обычных сцен)
+            if (gameBackground && scene.background) {
+                gameBackground.style.backgroundImage = `url("${scene.background}")`;
+            }
+
+            // Очищаем персонажей, потому что в bug‑search их не показываем
+            if (charactersLayer) {
+                charactersLayer.innerHTML = "";
+            }
+
+            // Скрываем обычный диалог, потому что он не используется в bug‑search
+            if (dialoguePanel) {
+                dialoguePanel.classList.add("hidden");
+            }
+
+            // ----------------- ВОССТАНАВЛИВАЕМ СОСТОЯНИЕ -----------------
+            // sceneState пришёл от сервера (mistakes, foundBugs, answeredCards, status)
+            const restoredState = {
+                mistakes: sceneState?.mistakes ?? 0,
+                found:    sceneState?.foundBugs?.length ?? 0,
+                finished: sceneState?.status === "won" || sceneState?.status === "lost",
+
+                // массив карточек берём из самой сцены – он всегда одинаковый
+                cards: scene.cards || [],
+
+                // Текущий индекс = количество уже отвеченных карточек
+                currentIndex: (sceneState?.answeredCards?.length) ?? 0,
+
+                // Сохраняем всю сцену, чтобы renderBugSearchScene могла её использовать
+                scene
+            };
+
+            // Используем уже готовую функцию рендера bug‑search,
+            // передаём в неё сцену и восстановленное состояние
+            renderBugSearchScene(scene, restoredState);
+        }
+    }
+);
+
+
 
 
 // ==================================================
@@ -1265,7 +1589,7 @@ socket.on(
         const currentPlayer =
             players.find(
                 player =>
-                    player.id === socket.id
+                    player.id === playerId
             );
 
 
@@ -1759,8 +2083,10 @@ socket.on(
             // ------------------------------------------
             // ЗАПУСКАЕМ BUG SEARCH
             // ------------------------------------------
-        
-            renderBugSearchScene(scene);
+            renderBugSearchScene(
+                scene,
+                bugSearch
+            );
         
             return;
         }
