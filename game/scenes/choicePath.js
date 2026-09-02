@@ -18,19 +18,19 @@ module.exports = {
         {
             id: "strategist",
             team: "strategist",
-            text: "Идём в серверную. Нужно встретиться с Вейдером лицом к лицу",
+            text: "Сначала столовая, потом работа",
             points: {
                 ownTeam: 10,
                 otherTeam: 5
             },
             nextSceneId: "diningRoom",
-            transitionText: "Увы, в серверную пока нельзя"
+            transitionText: "Отлично! Чубакка заждался нас!"
         },
     
         {
             id: "joker",
             team: "joker",
-            text: "Сначала в столовую! Чубакка там, и он делает лучший кофе в галактике",
+            text: "Кофе — топливо, столовая — наш путь",
             points: {
                 ownTeam: 30,
                 otherTeam: 10
@@ -42,7 +42,7 @@ module.exports = {
         {
             id: "critic",
             team: "critic",
-            text: "В комнату умных устройств. Нужно проверить всё до того, как встретимся с Вейдером",
+            text: "Кофе — единственный, кто здесь не врёт",
             points: {
                 ownTeam: 10,
                 otherTeam: 5

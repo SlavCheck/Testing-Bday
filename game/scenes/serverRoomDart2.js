@@ -22,7 +22,7 @@ module.exports = {
         {
             id: "strategist",
             team: "strategist",
-            text: "Анализирую его движения! Если я предугадаю траекторию удара — я смогу увернуться!",
+            text: "Анализирую траекторию удара! Если предугадаю движение — увернусь и контратакую!",
             points: {
                 ownTeam: 30,
                 otherTeam: 10
@@ -34,7 +34,7 @@ module.exports = {
         {
             id: "joker",
             team: "joker",
-            text: "Эй, Вейдер! А ты знаешь, почему штурмовики всегда промахиваются? Потому что ты их тренировал!",
+            text: "Сразу видно, кто штурмовиков тренировал...",
             points: {
                 ownTeam: 30,
                 otherTeam: 10
@@ -46,10 +46,10 @@ module.exports = {
         {
             id: "critic",
             team: "critic",
-            text: "Слушай, Вейдер. У нас есть деньги. Может, договоримся? (при наличии денег)",
+            text: "Твоё присутствие — баг! Сейчас пофиксим!",
             points: {
-                ownTeam: 50,
-                otherTeam: 50
+                ownTeam: 30,
+                otherTeam: 10
             },
             nextSceneId: "serverRoomDart3",
             transitionText: "Текст3"

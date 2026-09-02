@@ -22,7 +22,7 @@ module.exports = {
         {
             id: "strategist",
             team: "strategist",
-            text: "Чубакка, почини кофемашину. Это баг в прошивке. Нужно обновить ПО",
+            text: "Нужно провести регрессионное тестирование кофемашине",
             points: {
                 ownTeam: 30,
                 otherTeam: 10
@@ -34,7 +34,7 @@ module.exports = {
         {
             id: "joker",
             team: "joker",
-            text: "Чубакка, а ты случайно не брат нашего тимлида? Вы оба всё время ворчите и пьёте кофе!",
+            text: "Ты наш тимлид? Ворчишь также",
             points: {
                 ownTeam: 30,
                 otherTeam: 10
@@ -46,7 +46,7 @@ module.exports = {
         {
             id: "critic",
             team: "critic",
-            text: "Надеюсь, в твоём кофе нет приправы под названием шерсть Чубакки",
+            text: "Твоя кофемашина — как наш прод: вечно сломана",
             points: {
                 ownTeam: 30,
                 otherTeam: 10

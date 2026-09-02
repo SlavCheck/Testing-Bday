@@ -22,7 +22,7 @@ module.exports = {
         {
             id: "strategist",
             team: "strategist",
-            text: "📝 Бумажка — «Берём бумажку. Кто знает, может, это важная информация»",
+            text: "📝 Бумажка — «Берём бумажку. Кто знает, может, там важная информация»",
             points: {
                 ownTeam: 15,
                 otherTeam: 15
@@ -48,8 +48,8 @@ module.exports = {
             team: "critic",
             text: "🤝 Пойти дальше — «Спасибо, но нам ничего не нужно. У нас миссия»",
             points: {
-                ownTeam: 5,
-                otherTeam: 5
+                ownTeam: 50,
+                otherTeam: 50
             },
             nextSceneId: "serverDoorClosed",
             transitionText: "Текст3"

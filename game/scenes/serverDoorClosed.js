@@ -44,8 +44,8 @@ module.exports = {
             team: "critic",
             text: "Может, пароль — это «🕳️Люк»?",
             points: {
-                ownTeam: 30,
-                otherTeam: 30
+                ownTeam: 50,
+                otherTeam: 50
             },
             nextSceneId: "serverRoom",
             transitionText: "Текст3"

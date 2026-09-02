@@ -22,7 +22,7 @@ module.exports = {
         {
             id: "strategist",
             team: "strategist",
-            text: "☕ Взять эспрессо — «Спасибо, Чубакка! Беру эспрессо»",
+            text: "☕ Взять кофе",
             points: {
                 ownTeam: 30,
                 otherTeam: 30
@@ -34,7 +34,7 @@ module.exports = {
         {
             id: "joker",
             team: "joker",
-            text: "🍵 Взять чай — «Нет, спасибо. Я предпочитаю чай»",
+            text: "🍵 Взять чай",
             points: {
                 ownTeam: 10,
                 otherTeam: 10
@@ -42,11 +42,11 @@ module.exports = {
             nextSceneId: "smartDevicesRoom",
             transitionText: "Отлично! Пришло время проверить комнату с умными устройствами!"
         },
-    
+    /*
         {
             id: "critic",
             team: "critic",
-            text: "В комнату умных устройств. Нужно проверить всё до того, как встретимся с Вейдером",
+            text: "В комнату умных устройств. Нужно вооружиться",
             points: {
                 ownTeam: 20,
                 otherTeam: 20
@@ -54,5 +54,8 @@ module.exports = {
             nextSceneId: "smartDevicesRoom",
             transitionText: "Отлично! Пришло время проверить комнату с умными устройствами!"
         }
+        
+   
+     */
     ]
 };

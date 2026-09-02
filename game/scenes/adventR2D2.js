@@ -22,7 +22,7 @@ module.exports = {
         {
             id: "strategist",
             team: "strategist",
-            text: "Конечно, поможем! Мы же тестировщики. Это наш долг",
+            text: "Спокойно! Сейчас проверим все системы и вернём тебя в строй",
             points: {
                 ownTeam: 30,
                 otherTeam: 10
@@ -34,7 +34,7 @@ module.exports = {
         {
             id: "joker",
             team: "joker",
-            text: "Извини, приятель. У нас миссия. Нам нужно к Вейдеру",
+            text: "Так это баг? А я думал фича от Империи",
             points: {
                 ownTeam: 10,
                 otherTeam: 5
@@ -46,7 +46,7 @@ module.exports = {
         {
             id: "critic",
             team: "critic",
-            text: "Сам разберёшься. У нас свои проблемы",
+            text: "Твоя навигация — худший легаси-код. Дарт Вейдер писал?",
             points: {
                 ownTeam: 10,
                 otherTeam: 5

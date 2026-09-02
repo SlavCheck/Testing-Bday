@@ -34,7 +34,7 @@ module.exports = {
         {
             id: "joker",
             team: "joker",
-            text: "Ты — не баг. Ты — легаси. Тебя давно пора прогнать",
+            text: "Твой костюм с АлиЭкспресса?",
             points: {
                 ownTeam: 30,
                 otherTeam: 10
@@ -46,7 +46,7 @@ module.exports = {
         {
             id: "critic",
             team: "critic",
-            text: "За галактику! За релиз! Вперёд!",
+            text: "Ты — не баг. Ты — легаси. Тебя давно пора прогнать",
             points: {
                 ownTeam: 30,
                 otherTeam: 10

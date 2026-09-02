@@ -7,7 +7,7 @@ module.exports = {
         image: "/assets/characters/R3D3_portr_error.png"
     },
     voice: "/assets/sounds/Scene13_r3d3_first_scene.wav",
-    text: " Бип-буп! (перевод: «Спасибо! У меня какой-то сбой в навигационном модуле. Он думает, что я на Татуине, и пытается построить маршрут через пустыню»)",
+    text: " Бип-буп! (перевод: «У меня какой-то сбой в навигационном модуле. Он думает, что я на Татуине, и пытается построить маршрут через пустыню»)",
     voting: {
         enabled: true,
         duration: 35,
@@ -34,10 +34,10 @@ module.exports = {
         {
             id: "joker",
             team: "joker",
-            text: "Провести санитарное тестирование",
+            text: "Провести модульное тестирование",
             points: {
-                ownTeam: 30,
-                otherTeam: 30
+                ownTeam: 50,
+                otherTeam: 50
             },
             nextSceneId: "thanksFromR2D2",
             transitionText: "Текст2"
