@@ -827,15 +827,20 @@ button:disabled {
     width: 100vw;
     height: 100dvh;
 
-    padding: 40px;
+    padding: 40px 20px;
 
     display: flex;
     flex-direction: column;
 
     align-items: center;
-    justify-content: center;
 
+    /* ВАЖНО: не центрируем длинный список */
+    justify-content: flex-start;
+
+    overflow-x: hidden;
     overflow-y: auto;
+
+    -webkit-overflow-scrolling: touch;
 
     background:
         url("/assets/backgrounds/Space_bckg.png")
@@ -848,7 +853,9 @@ button:disabled {
 #resultsList {
     width: min(700px, 90vw);
 
-    margin: 30px auto;
+    margin: 30px auto 60px;
+
+    flex-shrink: 0;
 }
 
 .result-row {
@@ -1871,6 +1878,42 @@ button:disabled {
 
 @media (max-width: 800px) {
 
+    #resultsScreen {
+        padding:
+            70px
+            12px
+            calc(40px + env(safe-area-inset-bottom));
+    
+        justify-content: flex-start;
+    
+        overflow-x: hidden;
+        overflow-y: auto;
+    
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    #resultsList {
+        width: 100%;
+        max-width: 700px;
+    
+        margin:
+            20px auto
+            60px;
+    }
+    
+    .result-row {
+        grid-template-columns:
+            45px 1fr 80px;
+    
+        gap: 10px;
+    
+        padding:
+            12px 10px;
+    
+        margin-bottom: 8px;
+    
+        font-size: 16px;
+    }
     /* GENERAL */
 
     h1 {

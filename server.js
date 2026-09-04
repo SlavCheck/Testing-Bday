@@ -544,14 +544,12 @@ function sendPlayerState(socket, game, player) {
     
         timer: game.sceneTimer,
     
-        voting: game.voting ? {
-            active: game.voting.active,
-            endsAt: game.voting.endsAt,
-            round: game.voting.round,
-            allowedChoices: game.voting.allowedChoices
-                ? [...game.voting.allowedChoices]
-                : null
-        } : null,
+        voting: game.voting
+            ? {
+                active: game.voting.active,
+                endsAt: game.voting.endsAt
+            }
+            : null,
     
         pauseState:
             game.pauseState
@@ -592,22 +590,28 @@ function broadcastLobbyUpdate(game) {
 
 function startSceneVoting(game, scene) {
 
+    if (game.votingTimeout) {
+        clearTimeout(game.votingTimeout);
+        game.votingTimeout = null;
+    }
     const duration = scene.voting?.duration || 15;
 
     game.voting = {
         active: true,
-
+    
         choices: new Map(),
-
+    
         endsAt:
             Date.now() +
-            duration * 1000,
-
-        round: 1,
-
-        allowedChoices: null
+            duration * 1000
     };
 
+    console.log(
+        `[VOTING START DEBUG] game=${game.id} ` +
+        `scene=${game.currentScene?.id} ` +
+        `duration=${duration} ` +
+        `endsAt=${game.voting.endsAt}`
+    );
     console.log(
         `Голосование началось: ${game.id} / ${scene.id}`
     );
@@ -619,7 +623,7 @@ function startSceneVoting(game, scene) {
         {
             duration,
             endsAt: game.voting.endsAt,
-            round: 1
+            scene: game.currentScene
         }
     );
 
@@ -895,15 +899,11 @@ function moveToNextScene(game) {
     game.voting = {
 
         active: false,
-
+    
         choices: new Map(),
-
-        endsAt: null,
-
-        round: 0,
-
-        allowedChoices: null
-
+    
+        endsAt: null
+    
     };
 
 
@@ -957,278 +957,302 @@ function moveToNextScene(game) {
 
 
 // ---------------------------------------------------------------
-// finishSceneVoting – теперь поддерживает revote и переход
+// finishSceneVoting – теперь поддерживает переход
 // ---------------------------------------------------------------
 function finishSceneVoting(game, scene) {
-    // Если голосование уже не активно – выходим
+
+    console.log(
+        `[VOTING TIMER FIRED] game=${game.id} ` +
+        `scene=${game.currentScene?.id} ` +
+        `active=${game.voting?.active} ` +
+        `choices=${game.voting?.choices?.size}`
+    );
+
     if (!game.voting || !game.voting.active) {
         return;
     }
 
-    // Останавливаем текущий раунд
     game.voting.active = false;
 
-    // ==================================================
-    // СПЕЦИАЛЬНАЯ ОБРАБОТКА ВЫБОРА КОМАНДЫ
-    // ==================================================
+    // --------------------------------------------------
+    // СОБИРАЕМ ГОЛОСА
+    // --------------------------------------------------
 
-    
-
-    // --------------------- подсчёт голосов ---------------------
     const voteCounts = {};
+
     for (const choiceId of game.voting.choices.values()) {
-        voteCounts[choiceId] = (voteCounts[choiceId] || 0) + 1;
+
+        voteCounts[choiceId] =
+            (voteCounts[choiceId] || 0) + 1;
     }
-    console.log("Результаты голосования:", voteCounts);
 
-    // --------------------- никто не проголосовал ---------------------
-    if (Object.keys(voteCounts).length === 0) {
 
-        console.log("Никто не проголосовал.");
-    
+    const choices = scene.choices || [];
+
+
+    // --------------------------------------------------
+    // ПРОВЕРЯЕМ, ЕСТЬ ЛИ ВООБЩЕ ВАРИАНТЫ
+    // --------------------------------------------------
+
+    if (choices.length === 0) {
+
+        console.log(
+            `Нет вариантов для голосования: ${scene.id}`
+        );
+
         io.to(`game_${game.id}`).emit(
             "voting:finished",
             {
                 voteCounts,
                 winner: null,
+                winnerChoice: null,
                 tie: false
             }
         );
-    
+
         game.transitionEndsAt =
-    Date.now() + 5000;
+            Date.now() + 5000;
 
-game.transitionTimeout =
-    setTimeout(
-        () => {
+        game.transitionTimeout =
+            setTimeout(
+                () => {
 
-            game.transitionTimeout =
-                null;
+                    game.transitionTimeout = null;
+                    game.transitionEndsAt = null;
 
-            game.transitionEndsAt =
-                null;
+                    if (game.status !== "playing") {
+                        return;
+                    }
 
-            if (game.status !== "playing") {
-                return;
-            }
+                    moveToNextScene(game);
 
-            moveToNextScene(
-                game
+                },
+                5000
             );
 
-        },
-        5000
-    );
-    
         return;
     }
 
-    // --------------------- ищем победителей ---------------------
-    const maxVotes = Math.max(...Object.values(voteCounts));
-    const winners = Object.keys(voteCounts).filter(
-        id => voteCounts[id] === maxVotes
-    );
 
-    // --------------------- ОБРАБОТКА НИЧЬИ ---------------------
-    if (winners.length > 1) {
-        console.log("Ничья:", winners);
+    let winner;
+    let tie = false;
 
-        // Если в сцене указано revote – запускаем его
-        if (scene.voting && scene.voting.tieBreak === "revote") {
-            const revoteDuration = scene.voting.revoteDuration || 15;
-            console.log(`Запускаем revote (длительность ${revoteDuration}s)`);
 
-            // Очищаем прошлый выбор игроков
-            for (const player of game.players.values()) {
-                player.currentChoice = null;
-            }
+    // --------------------------------------------------
+    // НИКТО НЕ ГОЛОСОВАЛ
+    // --------------------------------------------------
 
-            // Новый раунд голосования, разрешаем только tiedChoices
-            game.voting = {
-                active: true,
-                choices: new Map(),
-                endsAt: Date.now() + revoteDuration * 1000,
-                round: (game.voting.round || 1) + 1,
-                allowedChoices: new Set(winners)
-            };
+    if (
+        Object.keys(voteCounts).length === 0
+    ) {
 
-            // Сообщаем клиентам, что начался revote
-            io.to(`game_${game.id}`).emit("voting:revote_started", {
-                tiedChoices: winners,
-                duration: revoteDuration,
-                round: game.voting.round
-            });
-
-            // По истечении времени снова вызываем finishSceneVoting
-            game.votingTimeout =
-                setTimeout(
-                    () => {
-
-                        game.votingTimeout =
-                            null;
-
-                        if (game.status !== "playing") {
-                            return;
-                        }
-
-                        finishSceneVoting(
-                            game,
-                            scene
-                        );
-
-                    },
-                    revoteDuration * 1000
-                );
-            return; // дальше не будем определять победителя сейчас
-        }
-
-        // revote НЕ предусмотрен (или уже второй раунд) – выбираем случайного победителя
-        // revote НЕ предусмотрен — выбираем случайного победителя
-        const randomWinner =
-        winners[Math.floor(Math.random() * winners.length)];
+        winner =
+            choices[
+                Math.floor(
+                    Math.random() * choices.length
+                )
+            ].id;
 
         console.log(
-        `Случайный победитель: ${randomWinner}`
+            `Никто не проголосовал. ` +
+            `Случайно выбран вариант: ${winner}`
         );
 
-        awardVotingPoints(
-        game,
-        scene,
-        randomWinner
-        );
+    }
 
-        // Сохраняем ветвление
-        const randomWinningChoice =
-        scene.choices.find(
-            choice =>
-                choice.id === randomWinner
-        );
 
-        if (
-        randomWinningChoice &&
-        randomWinningChoice.nextSceneId
-        ) {
+    // --------------------------------------------------
+    // ЕСТЬ ГОЛОСА
+    // --------------------------------------------------
 
-        game.nextSceneId =
-            randomWinningChoice.nextSceneId;
+    else {
 
-        } else if (scene.nextSceneId) {
+        const maxVotes =
+            Math.max(
+                ...Object.values(voteCounts)
+            );
 
-        game.nextSceneId =
-            scene.nextSceneId;
 
-        } else {
+        const winners =
+            Object.entries(voteCounts)
+                .filter(
+                    ([choiceId, votes]) =>
+                        votes === maxVotes
+                )
+                .map(
+                    ([choiceId]) =>
+                        choiceId
+                );
 
-        delete game.nextSceneId;
+
+        // --------------------------------------------------
+        // НИЧЬЯ
+        // --------------------------------------------------
+
+        if (winners.length > 1) {
+
+            tie = true;
+
+            winner =
+                winners[
+                    Math.floor(
+                        Math.random() * winners.length
+                    )
+                ];
+
+            console.log(
+                `Ничья: ${winners.join(", ")}. ` +
+                `Случайно выбран победитель: ${winner}`
+            );
+
         }
 
-        io.to(
-        `game_${game.id}`
-        ).emit(
+
+        // --------------------------------------------------
+        // ЕДИНСТВЕННЫЙ ПОБЕДИТЕЛЬ
+        // --------------------------------------------------
+
+        else {
+
+            winner = winners[0];
+
+            console.log(
+                `Победитель голосования: ${winner} ` +
+                `(${maxVotes} голосов)`
+            );
+        }
+    }
+
+
+    // --------------------------------------------------
+    // НАХОДИМ ВЫИГРАВШИЙ ВАРИАНТ
+    // --------------------------------------------------
+
+    const winningChoice =
+        choices.find(
+            choice =>
+                choice.id === winner
+        );
+
+
+    if (!winningChoice) {
+
+        console.error(
+            `Не найден вариант-победитель: ${winner}`
+        );
+
+        io.to(`game_${game.id}`).emit(
+            "voting:finished",
+            {
+                voteCounts,
+                winner: null,
+                winnerChoice: null,
+                tie
+            }
+        );
+
+        game.transitionEndsAt =
+            Date.now() + 5000;
+
+        game.transitionTimeout =
+            setTimeout(
+                () => {
+
+                    game.transitionTimeout = null;
+                    game.transitionEndsAt = null;
+
+                    if (game.status !== "playing") {
+                        return;
+                    }
+
+                    moveToNextScene(game);
+
+                },
+                5000
+            );
+
+        return;
+    }
+
+
+    // --------------------------------------------------
+    // НАЧИСЛЯЕМ ОЧКИ
+    // --------------------------------------------------
+
+    awardVotingPoints(
+        game,
+        scene,
+        winner
+    );
+
+
+    // --------------------------------------------------
+    // ОПРЕДЕЛЯЕМ СЛЕДУЮЩУЮ СЦЕНУ
+    // --------------------------------------------------
+
+    game.nextSceneId =
+        winningChoice.nextSceneId ||
+        scene.nextSceneId ||
+        null;
+
+
+    // --------------------------------------------------
+    // ОТПРАВЛЯЕМ РЕЗУЛЬТАТ КЛИЕНТАМ
+    // --------------------------------------------------
+
+    io.to(`game_${game.id}`).emit(
         "voting:finished",
         {
             voteCounts,
-            winner: randomWinner,
-            winnerChoice: randomWinningChoice,
-            tie: true
+            winner,
+            winnerChoice: winningChoice,
+            tie
         }
-        );
+    );
 
-        game.transitionEndsAt =
+
+    console.log(
+        `Голосование завершено: ${game.id} / ${scene.id}`
+    );
+
+    console.log(
+        `Итоговый вариант: ${winningChoice.id}`
+    );
+
+    console.log(
+        `Следующая сцена: ${game.nextSceneId}`
+    );
+
+
+    // --------------------------------------------------
+    // TRANSITION 5 СЕКУНД
+    // --------------------------------------------------
+
+    game.transitionEndsAt =
         Date.now() + 5000;
-    
+
     game.transitionTimeout =
         setTimeout(
             () => {
-    
-                game.transitionTimeout =
-                    null;
-    
-                game.transitionEndsAt =
-                    null;
-    
+
+                game.transitionTimeout = null;
+                game.transitionEndsAt = null;
+
                 if (game.status !== "playing") {
                     return;
                 }
-    
-                moveToNextScene(
-                    game
-                );
-    
+
+                moveToNextScene(game);
+
             },
             5000
         );
-
-        return;
-    }
-
-    // ---------- ОДНОЗНАЧНЫЙ ПОБЕДИТЕЛЬ ----------
-const winner = winners[0];
-console.log(`Победил вариант: ${winner}`);
-
-// Начисляем очки
-awardVotingPoints(game, scene, winner);
-
-// ---- Сохраняем ветвление, если оно задано в выбранном варианте ----
-const winningChoice = scene.choices.find(c => c.id === winner);
-if (winningChoice && winningChoice.nextSceneId) {
-    // Запоминаем, что следующая сцена должна быть именно этой
-    game.nextSceneId = winningChoice.nextSceneId;
-    console.log(`Запланирована ветвленная сцена: ${game.nextSceneId}`);
-} else if (scene.nextSceneId) {
-    // Если у самой сцены есть fallback‑next (как у intro)
-    game.nextSceneId = scene.nextSceneId;
-    console.log(`Используем fallback‑next сцены: ${game.nextSceneId}`);
-} else {
-    delete game.nextSceneId; // ничего не запоминаем – переходим линейно
+        console.log(
+            `[FINISH VOTING DONE] game=${game.id} ` +
+            `scene=${game.currentScene?.id}`
+        );
 }
 
-// Оповещаем клиентов о результате голосования
-io.to(`game_${game.id}`).emit(
-    "voting:finished",
-    {
-        voteCounts,
-
-        winner,
-
-        winnerChoice: winningChoice,
-
-        tie: false
-    }
-);
-
-// --------------------------------------------------
-// ПАУЗА ДЛЯ TRANSITION
-// --------------------------------------------------
-
-game.transitionEndsAt =
-    Date.now() + 5000;
-
-game.transitionTimeout =
-    setTimeout(
-        () => {
-
-            game.transitionTimeout =
-                null;
-
-            game.transitionEndsAt =
-                null;
-
-            if (game.status !== "playing") {
-                return;
-            }
-
-            moveToNextScene(
-                game
-            );
-
-        },
-        5000
-    );
-
-return;
-
-}
 
 
 // --------------------------------------------------
@@ -1892,6 +1916,13 @@ socket.on(
     ({ choiceId }) => {
 
         console.log(
+            `[CHOICE DEBUG] socket=${socket.id} ` +
+            `game=${socket.gameId} ` +
+            `choice=${choiceId} ` +
+            `scene=${games.get(socket.gameId)?.currentScene?.id} ` +
+            `votingActive=${games.get(socket.gameId)?.voting?.active}`
+        );
+        console.log(
             `Игрок ${socket.id} выбрал: ${choiceId}`
         );
 
@@ -1999,24 +2030,6 @@ socket.on(
 
             console.log(
                 `Неизвестный вариант: ${choiceId}`
-            );
-
-            return;
-        }
-
-        // ------------------------------------------
-        // ЕСЛИ ЭТО ПОВТОРНОЕ ГОЛОСОВАНИЕ,
-        // ПРОВЕРЯЕМ ДОПУСТИМЫЙ ВАРИАНТ
-        // ------------------------------------------
-
-        if (
-            game.voting.allowedChoices &&
-            !game.voting.allowedChoices.has(choiceId)
-        ) {
-
-            console.log(
-                `Вариант ${choiceId} недоступен ` +
-                `в текущем голосовании.`
             );
 
             return;
@@ -2160,8 +2173,7 @@ socket.on(
             game.voting = {
                 active: false,
                 choices: new Map(),
-                endsAt: null,
-                round: 0
+                endsAt: null
             };
 
             console.log(
