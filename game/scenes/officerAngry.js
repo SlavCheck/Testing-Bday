@@ -10,11 +10,11 @@ module.exports = {
     text: "Как вы смеете! Вы... вы... ШТУРМОВИКИ! АРЕСТУЙТЕ ИХ!",
     voting: {
         enabled: true,
-        duration: 35,
+        duration: 30,
         tieBreak: "revote",
         revoteDuration: 15
     },
-    duration: 35,
+    duration: 30,
     transition: {
         title: "Заголовок",
         text: "Текст"

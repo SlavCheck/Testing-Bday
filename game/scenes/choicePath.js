@@ -6,11 +6,11 @@ module.exports = {
     text: "Вы стоите на перекрёстке. Три пути: 1. Налево — столовая / 2. Прямо — Умный Дом / 3. Направо — серверная",
     voting: {
         enabled: true,
-        duration: 35,
+        duration: 30,
         tieBreak: "revote",
         revoteDuration: 15
     },
-    duration: 35,
+    duration: 30,
     transition: {
         title: "Заголовок",
         text: "Текст"

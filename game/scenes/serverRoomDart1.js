@@ -10,7 +10,7 @@ module.exports = {
     },
     voting: {
         enabled: true,
-        duration: 35,
+        duration: 30,
         tieBreak: "revote",
         revoteDuration: 15
     },
@@ -18,7 +18,7 @@ module.exports = {
         title: "Заголовок",
         text: "Текст"
     },
-    duration: 35,
+    duration: 30,
     choices: [
         {
             id: "strategist",

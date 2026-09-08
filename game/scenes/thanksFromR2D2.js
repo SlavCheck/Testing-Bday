@@ -10,7 +10,7 @@ module.exports = {
     text: "Бип-буп-бип-буп! (перевод: «Работает! Вы починили меня! Спасибо, тестировщики!») «Бип-бип!» (перевод: «В благодарность я дам вам кое-что полезное. Выбирайте!»)",
     voting: {
         enabled: true,
-        duration: 35,
+        duration: 30,
         tieBreak: "revote",
         revoteDuration: 15
     },
@@ -18,7 +18,7 @@ module.exports = {
         title: "Заголовок",
         text: "Текст"
     },
-    duration: 35,
+    duration: 30,
     choices: [
         {
             id: "strategist",

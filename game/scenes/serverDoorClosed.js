@@ -6,11 +6,11 @@ module.exports = {
     text: "Вы подходите к двери серверной. Она закрыта. На панели — надпись: «ВВЕДИТЕ ПАРОЛЬ». Никаких подсказок. Только пустой экран и мигающий курсор",
     voting: {
         enabled: true,
-        duration: 35,
+        duration: 30,
         tieBreak: "revote",
         revoteDuration: 15
     },
-    duration: 35,
+    duration: 30,
     transition: {
         title: "Заголовок",
         text: "Текст"

@@ -10,11 +10,11 @@ module.exports = {
     text: "Что вы здесь делаете, стажёры? У нас всё работает. Релиз выйдет вовремя. Не тратьте моё время. И вообще, у меня тут отчёт: Система стабильна, багов нет, всё готово к релизу. Подписано: Д. Вейдер",
     voting: {
         enabled: true,
-        duration: 35,
+        duration: 30,
         tieBreak: "revote",
         revoteDuration: 15
     },
-    duration: 35,
+    duration: 30,
     transition: {
         title: "Заголовок",
         text: "Текст"

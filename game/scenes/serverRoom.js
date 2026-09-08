@@ -6,7 +6,7 @@ module.exports = {
     text: "Вы входите в серверную. Темно. Очень темно. Ни одного источника света. Только гул серверов и красные огоньки на стойках. Вы стоите на пороге и не знаете, куда идти",
     voting: {
         enabled: true,
-        duration: 35,
+        duration: 30,
         tieBreak: "revote",
         revoteDuration: 15
     },
@@ -14,7 +14,7 @@ module.exports = {
         title: "Заголовок",
         text: "Текст"
     },
-    duration: 35,
+    duration: 30,
     choices: [
         {
             id: "strategist",

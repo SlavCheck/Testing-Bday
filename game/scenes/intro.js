@@ -12,7 +12,6 @@ module.exports = {
         enabled: true,
         duration: 45,
         tieBreak: "revote",
-        revoteDuration: 15
     },
     transition: {
         title: "Алиса присоединяется к команде",
