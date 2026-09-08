@@ -1,6 +1,6 @@
 module.exports = {
     id: "intro",
-    nextSceneId: "bugsearch",               // «по умолчанию» если ни один вариант не задаёт свой переход
+    nextSceneId: "alice",               // «по умолчанию» если ни один вариант не задаёт свой переход
     background: "/assets/backgrounds/office_bckg.png",
     character: {
         name: "Йода",
@@ -28,7 +28,7 @@ module.exports = {
                 ownTeam: 30,
                 otherTeam: 10
             },
-            nextSceneId: "bugsearch",
+            nextSceneId: "alice",
             transitionText: "Команда решает всё задокументировать..."
         },
     
@@ -40,7 +40,7 @@ module.exports = {
                 ownTeam: 30,
                 otherTeam: 10
             },
-            nextSceneId: "bugsearch",
+            nextSceneId: "alice",
             transitionText: "Кажется, кто-то слишком любит легаси..."
         },
     
@@ -52,7 +52,7 @@ module.exports = {
                 ownTeam: 30,
                 otherTeam: 10
             },
-            nextSceneId: "bugsearch",
+            nextSceneId: "alice",
             transitionText: "Команда решает разобраться во всём лично..."
         }
     ]
