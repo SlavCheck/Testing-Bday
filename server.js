@@ -46,21 +46,20 @@ function startSceneTimer(game, duration) {
         game.sceneTimerTimeout = null;
     }
 
-    const endsAt =
-        Date.now() + duration * 1000;
+    const serverNow = Date.now();
+    const endsAt = serverNow + duration * 1000;
 
     game.sceneTimer = {
         duration,
-        endsAt
+        endsAt,
+        serverNow
     };
 
-    io.to(`game_${game.id}`).emit(
-        "scene:timer",
-        {
-            duration,
-            endsAt
-        }
-    );
+    io.to(`game_${game.id}`).emit("scene:timer", {
+        duration,
+        endsAt,
+        serverNow
+    });
 
     game.sceneTimerTimeout =
         setTimeout(() => {

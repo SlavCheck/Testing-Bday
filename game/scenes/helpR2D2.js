@@ -18,6 +18,7 @@ module.exports = {
         title: "Заголовок",
         text: "Текст"
     },
+    duration: 35,
     choices: [
         {
             id: "strategist",

@@ -5,7 +5,7 @@ module.exports = [
     require('./intro'),        // 0
     require('./path'),         // 1
     // require('./cafeteria'), // <– будущие сцены
-    // require('./smartRoom'), //   (раскомментируйте/добавьте когда создадите)
+    // require('./smartRoom'), // 
     // require('./r2d2'),
     // require('./closedDoor'),
     // require('./serverRoom'),

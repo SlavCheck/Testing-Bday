@@ -550,6 +550,166 @@ function transitionToScene(callback) {
 }
 
 // ==================================================
+// BUG SEARCH IMAGE LIGHTBOX
+// ==================================================
+
+let bugSearchLightbox = null;
+let bugSearchLightboxImage = null;
+
+function createBugSearchLightbox() {
+
+    // Если уже создан — повторно не создаём
+    if (bugSearchLightbox) {
+        return;
+    }
+
+    bugSearchLightbox =
+        document.createElement("div");
+
+    bugSearchLightbox.id =
+        "bugSearchImageLightbox";
+
+    bugSearchLightbox.innerHTML = `
+        <button
+            id="bugSearchImageLightboxClose"
+            type="button"
+            aria-label="Закрыть"
+        >
+            ×
+        </button>
+
+        <img
+            id="bugSearchImageLightboxImage"
+            src=""
+            alt=""
+        >
+    `;
+
+    document.body.appendChild(
+        bugSearchLightbox
+    );
+
+    bugSearchLightboxImage =
+        document.getElementById(
+            "bugSearchImageLightboxImage"
+        );
+
+    const closeButton =
+        document.getElementById(
+            "bugSearchImageLightboxClose"
+        );
+
+    // ------------------------------------------
+    // ЗАКРЫТИЕ КНОПКОЙ
+    // ------------------------------------------
+
+    closeButton.addEventListener(
+        "click",
+        (event) => {
+
+            event.stopPropagation();
+
+            closeBugSearchLightbox();
+
+        }
+    );
+
+    bugSearchLightboxImage.addEventListener(
+        "click",
+        (event) => {
+            event.stopPropagation();
+            closeBugSearchLightbox();
+        }
+    );
+    
+    // ------------------------------------------
+    // ЗАКРЫТИЕ КЛИКОМ ПО ФОНУ
+    // ------------------------------------------
+
+    bugSearchLightbox.addEventListener(
+        "click",
+        (event) => {
+
+            if (
+                event.target === bugSearchLightbox
+            ) {
+
+                closeBugSearchLightbox();
+
+            }
+
+        }
+    );
+
+}
+
+
+// Открыть изображение
+
+function openBugSearchLightbox(src, alt = "") {
+
+    createBugSearchLightbox();
+
+    if (!bugSearchLightboxImage) {
+        return;
+    }
+
+    bugSearchLightboxImage.src =
+        src;
+
+    bugSearchLightboxImage.alt =
+        alt;
+
+    bugSearchLightbox.classList.add(
+        "active"
+    );
+
+    // Блокируем прокрутку страницы
+    document.body.style.overflow =
+        "hidden";
+}
+
+
+// Закрыть изображение
+
+function closeBugSearchLightbox() {
+
+    if (!bugSearchLightbox) {
+        return;
+    }
+
+    bugSearchLightbox.classList.remove(
+        "active"
+    );
+
+    document.body.style.overflow =
+        "";
+
+}
+
+
+// ------------------------------------------
+// ESC
+// ------------------------------------------
+
+document.addEventListener(
+    "keydown",
+    (event) => {
+
+        if (
+            event.key === "Escape" &&
+            bugSearchLightbox &&
+            bugSearchLightbox.classList.contains("active")
+        ) {
+
+            closeBugSearchLightbox();
+
+        }
+
+    }
+);
+
+// ==================================================
 // RENDER BUG SEARCH
 // ==================================================
 function renderBugSearchScene(scene, savedState = null) {
@@ -834,25 +994,23 @@ function showBugSearchCard() {
 
     image.style.opacity = "0";
 
+    // Клик по картинке — открыть увеличенную версию
+    image.onclick = () => {
+        openBugSearchLightbox(
+            image.src,
+            "Изображение для поиска бага"
+        );
+    };
 
-    setTimeout(
-        () => {
+    setTimeout(() => {
 
-            image.src =
-                card.image;
+        image.onload = () => {
+            image.style.opacity = "1";
+        };
 
+        image.src = card.image;
 
-            image.onload =
-                () => {
-
-                    image.style.opacity =
-                        "1";
-
-                };
-
-        },
-        150
-    );
+    }, 150);
 
 }
 
@@ -1031,41 +1189,45 @@ voiceToggle.addEventListener(
 let sceneTimerInterval = null;
 let sceneTimerEndsAt = null;
 let sceneTimerRemainingMs = null;
+let serverTimeOffset = 0;
 
-function startSceneTimer(endsAt) {
+function startSceneTimer(endsAt, serverNow = null) {
 
     if (!sceneTimer) {
         return;
     }
 
-    // Останавливаем предыдущий таймер
     if (sceneTimerInterval) {
         clearInterval(sceneTimerInterval);
         sceneTimerInterval = null;
     }
 
+    // Синхронизация часов клиента с сервером
+    if (typeof serverNow === "number") {
+        serverTimeOffset = serverNow - Date.now();
+    }
+
     sceneTimerEndsAt = endsAt;
     sceneTimerRemainingMs = null;
+
     function updateSceneTimer() {
+
+        const now = Date.now() + serverTimeOffset;
 
         const remaining =
             Math.max(
                 0,
-                sceneTimerEndsAt - Date.now()
+                sceneTimerEndsAt - now
             );
 
         renderSceneTimerRemaining(remaining);
 
         if (remaining <= 0) {
 
-            clearInterval(
-                sceneTimerInterval
-            );
-
+            clearInterval(sceneTimerInterval);
             sceneTimerInterval = null;
 
-            sceneTimer.textContent =
-                "⏱ 0:00";
+            sceneTimer.textContent = "⏱ 0:00";
         }
     }
 
@@ -1537,7 +1699,8 @@ socket.on(
         ) {
 
             startSceneTimer(
-                timer.endsAt
+                timer.endsAt,
+                timer.serverNow
             );
 
         } else if (
@@ -2342,9 +2505,10 @@ socket.on(
         if (timer && timer.endsAt) {
 
             startSceneTimer(
-                timer.endsAt
+                timer.endsAt,
+                timer.serverNow
             );
-
+        
         } else {
 
             stopSceneTimer();
@@ -2725,9 +2889,10 @@ socket.on(
             timer &&
             timer.endsAt
         ) {
-
+        
             startSceneTimer(
-                timer.endsAt
+                timer.endsAt,
+                timer.serverNow
             );
 
         } else if (

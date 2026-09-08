@@ -23,7 +23,7 @@ module.exports = {
         tieBreak: "revote",
         revoteDuration: 15
     },
-
+    duration: 30,
     choices: [
 
         {

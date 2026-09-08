@@ -14,6 +14,7 @@ module.exports = {
         tieBreak: "revote",
         revoteDuration: 15
     },
+    duration: 35,
     transition: {
         title: "Заголовок",
         text: "Текст"

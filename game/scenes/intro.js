@@ -1,6 +1,6 @@
 module.exports = {
     id: "intro",
-    nextSceneId: "alice",               // «по умолчанию» если ни один вариант не задаёт свой переход
+    nextSceneId: "bugsearch",               // «по умолчанию» если ни один вариант не задаёт свой переход
     background: "/assets/backgrounds/office_bckg.png",
     character: {
         name: "Йода",
@@ -18,6 +18,7 @@ module.exports = {
         title: "Алиса присоединяется к команде",
         text: "Голограмма появляется посреди офиса..."
     },
+    duration: 45,
     choices: [
         {
             id: "strategist",
@@ -27,7 +28,7 @@ module.exports = {
                 ownTeam: 30,
                 otherTeam: 10
             },
-            nextSceneId: "alice",
+            nextSceneId: "bugsearch",
             transitionText: "Команда решает всё задокументировать..."
         },
     
@@ -39,7 +40,7 @@ module.exports = {
                 ownTeam: 30,
                 otherTeam: 10
             },
-            nextSceneId: "alice",
+            nextSceneId: "bugsearch",
             transitionText: "Кажется, кто-то слишком любит легаси..."
         },
     
@@ -51,7 +52,7 @@ module.exports = {
                 ownTeam: 30,
                 otherTeam: 10
             },
-            nextSceneId: "alice",
+            nextSceneId: "bugsearch",
             transitionText: "Команда решает разобраться во всём лично..."
         }
     ]

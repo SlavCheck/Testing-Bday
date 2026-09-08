@@ -1651,7 +1651,8 @@ button:disabled {
     object-position: center;
 
     user-select: none;
-    pointer-events: none;
+    pointer-events: auto;
+    cursor: zoom-in;
 
     /*
        Рамка непосредственно вокруг
@@ -2102,6 +2103,7 @@ button:disabled {
     }
     .dialogue-panel {
         max-height: 40dvh;
+        bottom: 1.5%;
         overflow: hidden;
         background:
             linear-gradient(
@@ -2170,7 +2172,7 @@ button:disabled {
     .character-frame {
         position: absolute;
         left: 50%;
-        bottom: 40dvh;
+        bottom: calc(40dvh + 8px);
         
         transform: translateX(-50%);
         
@@ -2483,4 +2485,53 @@ button:disabled {
     font-size: 15px;
 
     opacity: 0.7;
+}
+
+#bugSearchImageLightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+
+    background: rgba(0, 0, 0, 0.9);
+
+    align-items: center;
+    justify-content: center;
+}
+
+#bugSearchImageLightbox.active {
+    display: flex;
+}
+
+#bugSearchImageLightboxImage {
+    max-width: 90vw;
+    max-height: 90vh;
+
+    width: auto;
+    height: auto;
+
+    object-fit: contain;
+
+    cursor: pointer;
+}
+
+#bugSearchImageLightboxClose {
+    position: absolute;
+
+    top: 20px;
+    right: 25px;
+
+    z-index: 100000;
+
+    width: 50px;
+    height: 50px;
+
+    border: none;
+    background: transparent;
+
+    color: white;
+    font-size: 45px;
+    line-height: 1;
+
+    cursor: pointer;
 }

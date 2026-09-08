@@ -11,7 +11,7 @@ module.exports = {
     voice:
         "/assets/sounds/Scene5_Alice_search_bugs.wav",
 
-    duration: 60,
+    duration: 90,
 
     cards: [
         {
