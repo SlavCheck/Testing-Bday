@@ -532,6 +532,7 @@ function sendPlayerState(socket, game, player) {
     
         team: player.team,
         house: player.house,
+        snitchAnswer: player.snitchAnswer || null,
         score: player.score,
     
         status: game.status,
