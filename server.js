@@ -10,6 +10,7 @@ const io = new Server(server);
 
 const introScene =
     require("./game/scenes/intro");
+const snitchScene = require("./game/scenes/snitch-theft");
 const { assignNextHouse } = require("./game/services/houses");
 
 const PORT = process.env.PORT || 3000;
@@ -791,14 +792,11 @@ function moveToNextScene(game) {
                     }))
                     .sort((a, b) => b.score - a.score);
         
-            io.to(
-                `game_${game.id}`
-            ).emit(
-                "game:finished",
-                {
-                    results
-                }
-            );
+            io.to(`game_${game.id}`).emit("game:finished", {
+                results,
+                houseScores: getHouseScores(game),
+                correctSuspectId: game.currentScene?.id === "snitch-theft" ? "fred" : null
+            });
         
             return;
         }
@@ -2104,11 +2102,11 @@ socket.on(
 
 
             game.currentScene =
-                introScene;
+                snitchScene;
 
             startSceneTimer(
                 game,
-                introScene.duration || 30
+                snitchScene.duration
             );
 
             game.voting = {
@@ -2128,20 +2126,30 @@ socket.on(
             ).emit(
                 "game:started",
                 {
-                    scene: introScene,
+                    scene: snitchScene,
                     timer: game.sceneTimer
                 }
             );
 
-            // Запускаем голосование для intro
-
-            startSceneVoting(
-                game,
-                introScene
-            );
+            // This scene uses individual server-validated answers, not voting.
 
         }
     );
+
+    // One answer per player; no score or correct answer is exposed before timeout.
+    socket.on("snitch:answer", ({ suspectId } = {}) => {
+        if (!socket.gameId) return;
+        const game = games.get(socket.gameId);
+        if (!game || game.status !== "playing" ||
+            game.currentScene?.id !== "snitch-theft" ||
+            !game.sceneTimer || Date.now() >= game.sceneTimer.endsAt) return;
+        const player = [...game.players.values()].find(p => p.socketId === socket.id);
+        if (!player || player.snitchAnswer) return;
+        if (!snitchScene.suspects.some(suspect => suspect.id === suspectId)) return;
+        player.snitchAnswer = suspectId;
+        if (suspectId === "fred") player.score += snitchScene.points;
+        socket.emit("snitch:answer_saved", { suspectId });
+    });
 
     // ==================================================
     // ADMIN: PAUSE / RESUME GAME
