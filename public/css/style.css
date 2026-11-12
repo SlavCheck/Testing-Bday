@@ -2535,3 +2535,35 @@ button:disabled {
 
     cursor: pointer;
 }
+
+/* Golden Snitch investigation */
+.snitch-mystery {
+    position: absolute;
+    z-index: 8;
+    inset: 65px 0 0;
+    overflow-y: auto;
+    padding: 20px max(16px, calc((100vw - 1000px) / 2));
+    background: linear-gradient(145deg, #101a2d, #221a32);
+    color: #f4ead0;
+    text-align: left;
+}
+.snitch-mystery.hidden { display: none; }
+.snitch-mystery h1 { text-align: center; font-size: clamp(25px, 4vw, 42px); color: #f4cb65; }
+.snitch-mystery h2 { margin-top: 22px; font-size: 20px; color: #f4cb65; }
+.snitch-mystery li { margin: 8px 0; line-height: 1.5; }
+.snitch-suspects { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 20px 0; }
+.snitch-suspect {
+    display: flex; flex-direction: column; gap: 9px;
+    align-items: flex-start; text-align: left;
+    padding: 20px; border: 2px solid #65577b; border-radius: 15px;
+    background: #28243c; color: #fff4d9; cursor: pointer; line-height: 1.5;
+}
+.snitch-suspect:hover:not(:disabled) { border-color: #f4cb65; background: #383049; }
+.snitch-suspect:disabled { opacity: .72; cursor: default; }
+.snitch-suspect.selected { border-color: #f4cb65; background: #41334a; opacity: 1; }
+.snitch-icon { font-size: 40px; }
+#snitchAnswerStatus { text-align: center; font-weight: bold; padding-bottom: 25px; }
+@media (max-width: 640px) {
+    .snitch-mystery { inset: 50px 0 0; padding: 15px; }
+    .snitch-suspects { grid-template-columns: 1fr; }
+}
