@@ -9,6 +9,7 @@ const io = new Server(server);
 
 const introScene =
     require("./game/scenes/intro");
+const { assignNextHouse } = require("./game/services/houses");
 
 const PORT = process.env.PORT || 3000;
 const path = require("path");
@@ -528,6 +529,7 @@ function sendPlayerState(socket, game, player) {
         nickname: player.nickname,
     
         team: player.team,
+        house: player.house,
         score: player.score,
     
         status: game.status,
@@ -574,7 +576,8 @@ function broadcastLobbyUpdate(game) {
         [...game.players.values()].map(player => ({
             id: player.id,
             nickname: player.nickname,
-            team: player.team
+            team: player.team,
+            house: player.house
         }));
 
     io.to(`game_${game.id}`).emit(
@@ -1629,6 +1632,7 @@ io.on("connection", (socket) => {
                 pauseState: null,
     
                 players: new Map(),
+                nextHouseIndex: 0,
     
                 kickedPlayers: new Set()
     
@@ -1714,6 +1718,7 @@ io.on("connection", (socket) => {
                     socket.emit("player:joined", {
                         gameId: normalizedGameId,
                         nickname: existingPlayer.nickname,
+                        house: existingPlayer.house,
                         restored: true           // <-- важный флаг
                     });
 
@@ -1780,6 +1785,7 @@ io.on("connection", (socket) => {
                     id: normalizedPlayerId,
                     socketId: socket.id,
                     nickname: normalizedNick,
+                    house: assignNextHouse(game),
                     team: null,
                     score: 0,
                     currentChoice: null,
@@ -1787,6 +1793,7 @@ io.on("connection", (socket) => {
                     kicked: false
                 };
 
+                player.team = player.house; // Legacy scene compatibility
                 game.players.set(normalizedPlayerId, player);
 
                 // Привязываем сокет к комнате
@@ -1803,7 +1810,8 @@ io.on("connection", (socket) => {
                     "player:joined",
                     {
                         gameId: normalizedGameId,
-                        nickname: normalizedNick,   // <-- правильный ник
+                        nickname: normalizedNick,
+                        house: player.house,
                         restored: false             // <-- новый игрок, а не восстановление
                     }
                 );
@@ -1819,92 +1827,6 @@ io.on("connection", (socket) => {
 
 
 
-
-    // ==================================================
-    // PLAYER: CHOOSE TEAM
-    // ==================================================
-
-    socket.on(
-        "player:choose_team",
-        ({ team }) => {
-
-            if (!socket.gameId) {
-                return;
-            }
-
-
-            const game =
-                games.get(
-                    socket.gameId
-                );
-
-
-            if (!game) {
-                return;
-            }
-
-            // Команду можно выбрать только в лобби (до начала игры)
-
-            if (game.status !== "lobby") {
-                return;
-            }
-
-
-
-            const player =
-    [...game.players.values()]
-        .find(
-            player =>
-                player.socketId ===
-                socket.id
-        );
-
-
-            if (!player) {
-                return;
-            }
-
-
-            const allowedTeams = [
-                "strategist",
-                "joker",
-                "critic"
-            ];
-
-
-            if (!allowedTeams.includes(team)) {
-
-                return;
-            }
-
-
-            // Сохраняем команду
-
-            player.team =
-                team;
-
-
-            console.log(
-                `Игрок ${player.nickname} выбрал ${team}`
-            );
-
-
-            socket.emit(
-                "player:team_selected",
-                {
-                    team
-                }
-            );
-
-
-            // Обновляем данные у админа
-
-            broadcastLobbyUpdate(
-                game
-            );
-
-        }
-    );
 
 // ==================================================
 // PLAYER: CHOICE
@@ -2140,21 +2062,6 @@ socket.on(
             // ==========================================
 
             game.status = "playing";
-
-            // Игрокам, которые не выбрали команду, назначаем случайную
-
-            const allowedTeams = ["strategist", "joker", "critic"];
-
-            for (const player of game.players.values()) {
-                if (!player.team) {
-                    const randomIndex = Math.floor(Math.random() * allowedTeams.length);
-                    player.team = allowedTeams[randomIndex];
-                    console.log(
-                        `Игрок ${player.nickname} не выбрал команду. ` +
-                        `Автоматически назначена: ${player.team}`
-                    );
-                }
-            }
 
             // Обновляем данные в админке
 
