@@ -1591,6 +1591,7 @@ socket.on(
         nickname,
         team,
         house,
+        snitchAnswer,
         score,
         status,
         scene,
@@ -1752,6 +1753,10 @@ socket.on(
          * 6️⃣ Сохраняем сцену в глобальную переменную
          * ------------------------------------------------- */
         currentScene = scene;
+        if (scene.type === "snitch_mystery") {
+            renderSnitchMystery(scene, snitchAnswer);
+            return;
+        }
 
        /* -------------------------------------------------
          * 7️⃣  Специальный рендер для каждой категории сцен
@@ -2296,6 +2301,55 @@ function finishBugSearch() {
      */
 }
 
+// Snitch mystery: the server accepts one answer per player.
+let savedSnitchAnswer = null;
+function renderSnitchMystery(scene, answer = null) {
+    const panel = document.getElementById("snitchMystery");
+    if (!panel) return;
+    savedSnitchAnswer = answer;
+    panel.classList.remove("hidden");
+    bugSearch?.classList.add("hidden");
+    dialoguePanel?.classList.add("hidden");
+    charactersLayer?.replaceChildren();
+    if (gameBackground) gameBackground.style.backgroundImage = "none";
+    document.getElementById("snitchTitle").textContent = scene.title;
+    document.getElementById("snitchDescription").textContent = scene.text;
+    const clues = document.getElementById("snitchClues");
+    clues.replaceChildren();
+    for (const clue of scene.clues) {
+        const item = document.createElement("li");
+        item.textContent = clue;
+        clues.appendChild(item);
+    }
+    const suspects = document.getElementById("snitchSuspects");
+    suspects.replaceChildren();
+    for (const suspect of scene.suspects) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "snitch-suspect";
+        const icon = document.createElement("span");
+        icon.className = "snitch-icon";
+        icon.textContent = suspect.icon;
+        const name = document.createElement("strong");
+        name.textContent = suspect.name;
+        const testimony = document.createElement("span");
+        testimony.textContent = suspect.testimony;
+        button.append(icon, name, testimony);
+        button.disabled = Boolean(savedSnitchAnswer);
+        if (savedSnitchAnswer === suspect.id) button.classList.add("selected");
+        button.addEventListener("click", () => {
+            if (savedSnitchAnswer || isGamePaused) return;
+            socket.emit("snitch:answer", { suspectId: suspect.id });
+        });
+        suspects.appendChild(button);
+    }
+    document.getElementById("snitchAnswerStatus").textContent = savedSnitchAnswer
+        ? "Ответ принят. Ждём окончания испытания." : "Выбери одного подозреваемого. Ответ изменить нельзя.";
+}
+socket.on("snitch:answer_saved", ({ suspectId }) => {
+    if (currentScene?.type === "snitch_mystery") renderSnitchMystery(currentScene, suspectId);
+});
+
 // ==================================================
 // GAME STARTED
 // ==================================================
@@ -2347,6 +2401,14 @@ socket.on(
 
         // Показываем игровой экран
         gameScreen.classList.remove("hidden");
+
+        if (scene.type === "snitch_mystery") {
+            hideSceneTransition();
+            renderSnitchMystery(scene);
+            return;
+        }
+        document.getElementById("snitchMystery")?.classList.add("hidden");
+        if (dialoguePanel) dialoguePanel.classList.remove("hidden");
 
         // ==========================================
         // BUG SEARCH
@@ -2965,7 +3027,7 @@ returnToStartButton.addEventListener(
 
 socket.on(
     "game:finished",
-    ({ results }) => {
+    ({ results, houseScores, correctSuspectId }) => {
 
         console.log(
             "Игра завершена. Результаты:",
@@ -2984,6 +3046,28 @@ socket.on(
 
         // Очищаем старый список
         resultsList.innerHTML = "";
+
+        if (houseScores) {
+            const heading = document.createElement("h2");
+            heading.textContent = "Кубок факультетов — промежуточный итог испытания";
+            resultsList.appendChild(heading);
+            const names = {
+                gryffindor: "🦁 Гриффиндор", slytherin: "🐍 Слизерин",
+                ravenclaw: "🦅 Когтевран", hufflepuff: "🦡 Пуффендуй"
+            };
+            const sorted = Object.entries(houseScores).sort((a, b) => b[1] - a[1]);
+            for (const [house, score] of sorted) {
+                const row = document.createElement("p");
+                row.textContent = `${names[house] || house}: ${score} очков`;
+                resultsList.appendChild(row);
+            }
+            if (correctSuspectId) {
+                const answer = document.createElement("p");
+                answer.textContent = "Разгадка: Фред Уизли. Он утверждал, что открыл шкаф «Алохоморой», но заклинание на нём не работало.";
+                resultsList.appendChild(answer);
+            }
+            return;
+        }
 
         // results уже отсортирован сервером
         results.forEach(
