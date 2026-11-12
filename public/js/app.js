@@ -3,8 +3,7 @@ const socket = io();
 // ==================================================
 // VOICE
 // ==================================================
-let voiceEnabled =
-    localStorage.getItem("starTestQuest_voiceEnabled") !== "false";
+let voiceEnabled = false;
 let currentScene = null;
 let currentVoice = null;
 let isGamePaused = false;
@@ -1592,6 +1591,7 @@ socket.on(
         team,
         house,
         snitchAnswer,
+        snitchDialogueComplete,
         score,
         status,
         scene,
@@ -1754,6 +1754,8 @@ socket.on(
          * ------------------------------------------------- */
         currentScene = scene;
         if (scene.type === "snitch_mystery") {
+            snitchVotingActive = Boolean(timer?.endsAt);
+            snitchDialogueDone = Boolean(snitchDialogueComplete) || snitchVotingActive;
             renderSnitchMystery(scene, snitchAnswer);
             return;
         }
@@ -2301,9 +2303,52 @@ function finishBugSearch() {
      */
 }
 
-// Snitch mystery: the server accepts one answer per player.
+// Dialogue progress is local; voting starts for everyone only when all players are ready.
 let savedSnitchAnswer = null;
-function renderSnitchMystery(scene, answer = null) {
+let snitchDialogueIndex = 0;
+let snitchDialogueDone = false;
+let snitchVotingActive = false;
+let snitchTypingTimer = null;
+function showSnitchLine(scene) {
+    const line = scene.dialogues[snitchDialogueIndex];
+    if (!line) return;
+    const speaker = document.getElementById("snitchSpeaker");
+    const text = document.getElementById("snitchLine");
+    const portrait = document.getElementById("snitchPortrait");
+    const next = document.getElementById("snitchNext");
+    speaker.textContent = line.name;
+    portrait.src = line.image;
+    portrait.alt = line.name;
+    portrait.onerror = () => { portrait.style.visibility = "hidden"; };
+    portrait.style.visibility = "visible";
+    clearInterval(snitchTypingTimer);
+    let index = 0;
+    text.textContent = "";
+    next.textContent = "Показать полностью";
+    const reveal = () => {
+        clearInterval(snitchTypingTimer);
+        text.textContent = line.text;
+        next.textContent = snitchDialogueIndex === scene.dialogues.length - 1 ? "Перейти к голосованию" : "Далее";
+    };
+    snitchTypingTimer = setInterval(() => {
+        if (isGamePaused) return;
+        index = Math.min(index + 3, line.text.length);
+        text.textContent = line.text.slice(0, index);
+        if (index >= line.text.length) reveal();
+    }, 25);
+    next.onclick = () => {
+        if (isGamePaused) return;
+        if (index < line.text.length) { index = line.text.length; reveal(); return; }
+        clearInterval(snitchTypingTimer);
+        if (++snitchDialogueIndex < scene.dialogues.length) showSnitchLine(scene);
+        else {
+            snitchDialogueDone = true;
+            socket.emit("snitch:dialogue_complete");
+            renderSnitchMystery(scene, savedSnitchAnswer);
+        }
+    };
+}
+function renderSnitchMystery(scene, answer = null, restore = false) {
     const panel = document.getElementById("snitchMystery");
     if (!panel) return;
     savedSnitchAnswer = answer;
@@ -2313,6 +2358,11 @@ function renderSnitchMystery(scene, answer = null) {
     charactersLayer?.replaceChildren();
     if (gameBackground) gameBackground.style.backgroundImage = "none";
     document.getElementById("snitchTitle").textContent = scene.title;
+    const dialogue = document.getElementById("snitchDialogue");
+    const voting = document.getElementById("snitchVoting");
+    dialogue.classList.toggle("hidden", snitchDialogueDone || snitchVotingActive);
+    voting.classList.toggle("hidden", !snitchDialogueDone && !snitchVotingActive);
+    if (!snitchDialogueDone && !snitchVotingActive) { showSnitchLine(scene); return; }
     document.getElementById("snitchDescription").textContent = scene.text;
     const clues = document.getElementById("snitchClues");
     clues.replaceChildren();
@@ -2327,25 +2377,33 @@ function renderSnitchMystery(scene, answer = null) {
         const button = document.createElement("button");
         button.type = "button";
         button.className = "snitch-suspect";
-        const icon = document.createElement("span");
-        icon.className = "snitch-icon";
-        icon.textContent = suspect.icon;
+        const img = document.createElement("img");
+        img.className = "snitch-suspect-image";
+        img.src = suspect.image;
+        img.alt = suspect.name;
+        img.onerror = () => { img.style.display = "none"; };
         const name = document.createElement("strong");
         name.textContent = suspect.name;
-        const testimony = document.createElement("span");
-        testimony.textContent = suspect.testimony;
-        button.append(icon, name, testimony);
-        button.disabled = Boolean(savedSnitchAnswer);
+        button.append(img, name);
+        button.disabled = Boolean(savedSnitchAnswer) || !snitchVotingActive || isGamePaused;
         if (savedSnitchAnswer === suspect.id) button.classList.add("selected");
         button.addEventListener("click", () => {
-            if (savedSnitchAnswer || isGamePaused) return;
+            if (savedSnitchAnswer || isGamePaused || !snitchVotingActive) return;
             socket.emit("snitch:answer", { suspectId: suspect.id });
         });
         suspects.appendChild(button);
     }
     document.getElementById("snitchAnswerStatus").textContent = savedSnitchAnswer
-        ? "Ответ принят. Ждём окончания испытания." : "Выбери одного подозреваемого. Ответ изменить нельзя.";
+        ? "Ответ принят. Ждём окончания испытания."
+        : snitchVotingActive ? "Выбери одного подозреваемого. Ответ изменить нельзя."
+        : "Ожидаем, пока все игроки прочитают показания...";
 }
+socket.on("snitch:voting_started", () => {
+    snitchVotingActive = true;
+    snitchDialogueDone = true;
+    clearInterval(snitchTypingTimer);
+    if (currentScene?.type === "snitch_mystery") renderSnitchMystery(currentScene, savedSnitchAnswer);
+});
 socket.on("snitch:answer_saved", ({ suspectId }) => {
     if (currentScene?.type === "snitch_mystery") renderSnitchMystery(currentScene, suspectId);
 });
@@ -2404,6 +2462,9 @@ socket.on(
 
         if (scene.type === "snitch_mystery") {
             hideSceneTransition();
+            snitchDialogueIndex = 0;
+            snitchDialogueDone = false;
+            snitchVotingActive = false;
             renderSnitchMystery(scene);
             return;
         }
@@ -3063,7 +3124,7 @@ socket.on(
             }
             if (correctSuspectId) {
                 const answer = document.createElement("p");
-                answer.textContent = "Разгадка: Фред Уизли. Он утверждал, что открыл шкаф «Алохоморой», но заклинание на нём не работало.";
+                answer.textContent = "Итак, вор — Рон! Снитч найден и возвращён. Но это только начало! Первое испытание Турнира — поймать снитч!";
                 resultsList.appendChild(answer);
             }
             return;
