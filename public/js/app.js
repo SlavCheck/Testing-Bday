@@ -3107,6 +3107,12 @@ socket.on(
 
         // Очищаем старый список
         resultsList.innerHTML = "";
+        if (correctSuspectId === "ron" && !houseScores) {
+            const answer = document.createElement("p");
+            answer.textContent = "Итак, вор — Рон! Снитч найден и возвращён. Но это только начало! Первое испытание Турнира — поймать снитч!";
+            resultsList.appendChild(answer);
+            return;
+        }
 
         if (houseScores) {
             const heading = document.createElement("h2");
