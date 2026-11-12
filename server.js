@@ -533,6 +533,7 @@ function sendPlayerState(socket, game, player) {
         team: player.team,
         house: player.house,
         snitchAnswer: player.snitchAnswer || null,
+        snitchDialogueComplete: Boolean(game.snitchReady?.has(player.id)),
         score: player.score,
     
         status: game.status,
@@ -796,7 +797,7 @@ function moveToNextScene(game) {
             io.to(`game_${game.id}`).emit("game:finished", {
                 results,
                 houseScores: getHouseScores(game),
-                correctSuspectId: game.currentScene?.id === "snitch-theft" ? "fred" : null
+                correctSuspectId: game.currentScene?.id === "snitch-theft" ? "ron" : null
             });
         
             return;
@@ -2105,10 +2106,9 @@ socket.on(
             game.currentScene =
                 snitchScene;
 
-            startSceneTimer(
-                game,
-                snitchScene.duration
-            );
+            // The voting clock begins only after every player has read the dialogues.
+            game.snitchReady = new Set();
+            game.sceneTimer = null;
 
             game.voting = {
                 active: false,
@@ -2137,6 +2137,20 @@ socket.on(
         }
     );
 
+    socket.on("snitch:dialogue_complete", () => {
+        const game = games.get(socket.gameId);
+        if (!game || game.status !== "playing" || game.currentScene?.id !== "snitch-theft" || game.sceneTimer) return;
+        const player = [...game.players.values()].find(p => p.socketId === socket.id);
+        if (!player) return;
+        game.snitchReady ||= new Set();
+        game.snitchReady.add(player.id);
+        const everyoneReady = [...game.players.values()].every(p => game.snitchReady.has(p.id));
+        if (everyoneReady) {
+            startSceneTimer(game, snitchScene.duration);
+            io.to(`game_${game.id}`).emit("snitch:voting_started");
+        }
+    });
+
     // One answer per player; no score or correct answer is exposed before timeout.
     socket.on("snitch:answer", ({ suspectId } = {}) => {
         if (!socket.gameId) return;
@@ -2148,7 +2162,7 @@ socket.on(
         if (!player || player.snitchAnswer) return;
         if (!snitchScene.suspects.some(suspect => suspect.id === suspectId)) return;
         player.snitchAnswer = suspectId;
-        if (suspectId === "fred") player.score += snitchScene.points;
+        if (suspectId === "ron") player.score += snitchScene.points;
         socket.emit("snitch:answer_saved", { suspectId });
     });
 
