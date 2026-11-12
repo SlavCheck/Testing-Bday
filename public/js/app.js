@@ -266,8 +266,11 @@ const HOUSE_NAMES = {
     hufflepuff: "🦡 Пуффендуй"
 };
 function showAssignedHouse(house) {
-    if (selectedTeamText && house) selectedTeamText.textContent =
+    if (!house) return;
+    currentHouse = house;
+    if (selectedTeamText) selectedTeamText.textContent =
         `Твой факультет: ${HOUSE_NAMES[house] || house}`;
+    renderHouseScore();
 }
 
 const characterName =
@@ -2007,22 +2010,16 @@ socket.on(
 // LOBBY UPDATE
 // ==================================================
 
-socket.on("lobby:update", ({ players }) => {
-    if (lobbyPlayerCount) lobbyPlayerCount.textContent = players.length;
-    const waitingCount = document.getElementById("waitingPlayerCount");
-    if (waitingCount) waitingCount.textContent = players.length;
-    const list = document.getElementById("houseLobbyList");
-    if (!list) return;
-    list.replaceChildren();
-    const heading = document.createElement("p");
-    heading.textContent = "Участники и факультеты:";
-    list.appendChild(heading);
-    for (const player of players) {
-        const item = document.createElement("div");
-        item.textContent = `${player.nickname} — ${HOUSE_NAMES[player.house] || "Ожидает распределения"}`;
-        list.appendChild(item);
-        if (player.id === playerId) showAssignedHouse(player.house);
-    }
+let currentHouse = null;
+let currentHouseScores = {};
+function renderHouseScore() {
+    const el = document.getElementById("houseScore");
+    if (el) el.textContent = currentHouse
+        ? String(currentHouseScores[currentHouse] ?? 0) : "0";
+}
+socket.on("house:scores", ({ scores }) => {
+    currentHouseScores = scores || {};
+    renderHouseScore();
 });
 
 // ==================================================
