@@ -59,21 +59,15 @@ const playerCountElement =
     );
 
 
-const strategistCount =
-    document.getElementById(
-        "strategistCount"
-    );
-
-const jokerCount =
-    document.getElementById(
-        "jokerCount"
-    );
-
-const criticCount =
-    document.getElementById(
-        "criticCount"
-    );
-
+const HOUSE_NAMES = {
+    gryffindor: "🦁 Гриффиндор",
+    slytherin: "🐍 Слизерин",
+    ravenclaw: "🦅 Когтевран",
+    hufflepuff: "🦡 Пуффендуй"
+};
+const houseCounts = Object.fromEntries(
+    Object.keys(HOUSE_NAMES).map(id => [id, document.getElementById(id + "Count")])
+);
 
 const playerList =
     document.getElementById(
@@ -170,239 +164,39 @@ socket.on(
 // LOBBY UPDATE
 // ==================================================
 
-socket.on(
-    "lobby:update",
-    ({ players }) => {
-
-        console.log(
-            "Lobby update:",
-            players
-        );
-
-
-        // ------------------------------------------
-        // TOTAL
-        // ------------------------------------------
-
-        playerCountElement.textContent =
-            players.length;
-
-
-        // ------------------------------------------
-        // TEAM COUNTERS
-        // ------------------------------------------
-
-        let strategist = 0;
-        let joker = 0;
-        let critic = 0;
-
-
-        // ------------------------------------------
-        // ALL TEAMS?
-        // ------------------------------------------
-
-        let allTeamsSelected =
-            players.length > 0;
-
-
-        // ------------------------------------------
-        // PLAYER LIST
-        // ------------------------------------------
-
-        playerList.innerHTML = "";
-
-
-        players.forEach(
-            (player) => {
-
-                const row =
-                    document.createElement(
-                        "div"
-                    );
-
-
-                row.className =
-                    "player-row";
-
-
-                let teamName =
-                    "Команда не выбрана";
-
-
-                let teamIcon =
-                    "❔";
-
-
-                if (
-                    player.team ===
-                    "strategist"
-                ) {
-
-                    strategist++;
-
-                    teamName =
-                        "Стратеги";
-
-                    teamIcon =
-                        "🧠";
-
-                }
-
-
-                if (
-                    player.team ===
-                    "joker"
-                ) {
-
-                    joker++;
-
-                    teamName =
-                        "Шутники";
-
-                    teamIcon =
-                        "😎";
-
-                }
-
-
-                if (
-                    player.team ===
-                    "critic"
-                ) {
-
-                    critic++;
-
-                    teamName =
-                        "Критики";
-
-                    teamIcon =
-                        "🔎";
-
-                }
-
-
-                if (!player.team) {
-
-                    allTeamsSelected =
-                        false;
-
-                }
-
-
-                row.innerHTML = `
-
-    <span class="player-name">
-        ${escapeHtml(player.nickname)}
-    </span>
-
-    <span class="player-team">
-        ${teamIcon}
-        ${teamName}
-    </span>
-
-    <button
-        class="kick-button"
-        data-player-id="${player.id}"
-    >
-        ВЫГНАТЬ
-    </button>
-
-`;
-
-
-                playerList.appendChild(
-                    row
-                );
-                const kickButton =
-    row.querySelector(".kick-button");
-
-
-kickButton.addEventListener(
-    "click",
-    () => {
-
-        const confirmed =
-            confirm(
-                `Выгнать игрока "${player.nickname}"?`
-            );
-
-
-        if (!confirmed) {
-            return;
-        }
-
-
-        socket.emit(
-            "admin:kick_player",
-            {
-                playerId: player.id
+socket.on("lobby:update", ({ players }) => {
+    playerCountElement.textContent = players.length;
+    const counts = Object.fromEntries(Object.keys(HOUSE_NAMES).map(id => [id, 0]));
+    playerList.replaceChildren();
+    for (const player of players) {
+        if (player.house in counts) counts[player.house]++;
+        const row = document.createElement("div");
+        row.className = "player-row";
+        const name = document.createElement("span");
+        name.className = "player-name";
+        name.textContent = player.nickname;
+        const house = document.createElement("span");
+        house.className = "player-team";
+        house.textContent = HOUSE_NAMES[player.house] || "Не распределён";
+        const kick = document.createElement("button");
+        kick.className = "kick-button";
+        kick.textContent = "ВЫГНАТЬ";
+        kick.addEventListener("click", () => {
+            if (confirm(`Выгнать игрока "${player.nickname}"?`)) {
+                socket.emit("admin:kick_player", { playerId: player.id });
             }
-        );
-
+        });
+        row.append(name, house, kick);
+        playerList.appendChild(row);
     }
-);
-
-            }
-        );
-
-
-        // ------------------------------------------
-        // COUNTERS
-        // ------------------------------------------
-
-        strategistCount.textContent =
-            strategist;
-
-        jokerCount.textContent =
-            joker;
-
-        criticCount.textContent =
-            critic;
-
-
-        // ------------------------------------------
-        // START BUTTON
-        // ------------------------------------------
-
-        startGameButton.disabled =
-            !allTeamsSelected;
-
-
-        // ------------------------------------------
-        // STATUS
-        // ------------------------------------------
-
-        if (players.length === 0) {
-
-            adminStatus.textContent =
-                "Ожидаем игроков...";
-
-        }
-
-        else if (!allTeamsSelected) {
-
-            const waiting =
-                players.filter(
-                    player =>
-                        !player.team
-                ).length;
-
-
-            adminStatus.textContent =
-                `Ожидаем выбора команды: ${waiting}`;
-
-        }
-
-        else {
-
-            adminStatus.textContent =
-                "Все игроки выбрали команды. Можно начинать!";
-
-        }
-
+    for (const [id, el] of Object.entries(houseCounts)) {
+        if (el) el.textContent = counts[id];
     }
-);
-
+    startGameButton.disabled = players.length === 0 || players.some(player => !player.house);
+    adminStatus.textContent = players.length
+        ? "Факультеты распределены. Можно начинать!"
+        : "Ожидаем игроков...";
+});
 
 // ==================================================
 // START GAME
@@ -414,7 +208,7 @@ startGameButton.addEventListener(
 
         const confirmed =
             confirm(
-                "Все игроки выбрали команды.\n\nНачать игру?"
+                "Факультеты распределены.\n\nНачать игру?"
             );
 
 
