@@ -796,7 +796,7 @@ function moveToNextScene(game) {
         
             io.to(`game_${game.id}`).emit("game:finished", {
                 results,
-                houseScores: getHouseScores(game),
+                // Scores stay private until the final tournament scene.
                 correctSuspectId: game.currentScene?.id === "snitch-theft" ? "ron" : null
             });
         
