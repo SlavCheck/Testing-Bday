@@ -64,7 +64,7 @@
             >
 
             <button id="joinButton">
-                Присоединиться
+                Узнать факультет
             </button>
 
             <p
@@ -110,102 +110,16 @@
         <!-- TEAM SCREEN -->
         <!-- ========================================= -->
 
-        <section
-    id="teamScreen"
-    class="hidden"
->
-    <div class="game-background"></div>
-
-    <h1>Выбери свой путь</h1>
-
-    <p class="yoda-text">
-        «Собрал вас я здесь. Не случайно. Каждый из вас — важная часть экипажа. 
-        <br> Но разные вы. По-разному мыслите вы. Выбирайте путь свой».
-    </p>
-
-    <div class="team-buttons">
-
-        <button
-            class="team-button"
-            data-team="strategist"
-        >
-            <div class="team-icon">🧠</div>
-
-            <div class="team-name">
-                Стратеги
-            </div>
-
-            <div class="team-description">
-                Я мыслю логически.
-                Каждый баг должен быть
-                задокументирован.
-            </div>
-
-            <div class="team-select">
-                ВЫБРАТЬ КОМАНДУ
-            </div>
-        </button>
-
-
-        <button
-            class="team-button"
-            data-team="joker"
-        >
-            <div class="team-icon">😎</div>
-
-            <div class="team-name">
-                Шутники
-            </div>
-
-            <div class="team-description">
-                Жизнь слишком коротка,
-                чтобы быть серьёзным.
-                Погнали веселиться!
-            </div>
-
-            <div class="team-select">
-                ВЫБРАТЬ КОМАНДУ
-            </div>
-        </button>
-
-
-        <button
-            class="team-button"
-            data-team="critic"
-        >
-            <div class="team-icon">🔎</div>
-
-            <div class="team-name">
-                Критики
-            </div>
-
-            <div class="team-description">
-                Я вижу все недостатки
-                этого кода.
-                И я не боюсь об этом говорить.
-            </div>
-
-            <div class="team-select">
-                ВЫБРАТЬ КОМАНДУ
-            </div>
-        </button>
-
-    </div>
-
-    <p
-        id="teamStatus"
-        class="status"
-    ></p>
-
-</section>
 <section
     id="waitingScreen"
     class="hidden"
 >
 
-    <h1>Ты в команде!</h1>
+    <h1>Твой факультет определён!</h1>
 
     <p id="selectedTeamText"></p>
+    <p>Игроков в комнате: <strong id="waitingPlayerCount">0</strong></p>
+    <div id="houseLobbyList" aria-live="polite"></div>
 
     <p>
         Ждём запуска игры администратором...
