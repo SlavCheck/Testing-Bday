@@ -1,5 +1,6 @@
 const express = require("express");
 const http = require("http");
+const { randomBytes, timingSafeEqual } = require("crypto");
 const { Server } = require("socket.io");
 
 const app = express();
@@ -570,24 +571,33 @@ function sendPlayerState(socket, game, player) {
 
 
 
+function getHouseScores(game) {
+    const scores = { gryffindor: 0, slytherin: 0, ravenclaw: 0, hufflepuff: 0 };
+    for (const player of game.players.values()) {
+        if (Object.hasOwn(scores, player.house)) scores[player.house] += player.score || 0;
+    }
+    for (const [house, bonus] of Object.entries(game.houseBonuses || {})) {
+        if (Object.hasOwn(scores, house)) scores[house] += bonus;
+    }
+    return scores;
+}
+function broadcastHouseScores(game) {
+    io.to(`game_${game.id}`).emit("house:scores", { scores: getHouseScores(game) });
+}
 function broadcastLobbyUpdate(game) {
-
-    const players =
-        [...game.players.values()].map(player => ({
-            id: player.id,
-            nickname: player.nickname,
-            team: player.team,
-            house: player.house
-        }));
-
-    io.to(`game_${game.id}`).emit(
-        "lobby:update",
-        {
-            gameId: game.id,
-            status: game.status,
-            players
-        }
-    );
+    const players = [...game.players.values()].map(player => ({
+        id: player.id, nickname: player.nickname, house: player.house
+    }));
+    if (game.adminSocketId) io.to(game.adminSocketId).emit("lobby:update", {
+        gameId: game.id, status: game.status, players
+    });
+    broadcastHouseScores(game);
+}
+function isValidAdminToken(game, token) {
+    if (typeof token !== "string" || !/^[0-9a-f]{64}$/.test(token)) return false;
+    const actual = Buffer.from(token, "hex");
+    const expected = Buffer.from(game.adminToken, "hex");
+    return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 
 function startSceneVoting(game, scene) {
@@ -732,6 +742,8 @@ function awardVotingPoints(game, scene, winner) {
             `Всего: ${player.score}`
         );
     }
+    broadcastHouseScores(game);
+
 }
 
 /**
@@ -1534,6 +1546,7 @@ io.on("connection", (socket) => {
                     scene.points || 0;
     
                 player.score += points;
+                broadcastHouseScores(game);
     
                 console.log(
                     `Игрок ${player.nickname} ` +
@@ -1633,6 +1646,9 @@ io.on("connection", (socket) => {
     
                 players: new Map(),
                 nextHouseIndex: 0,
+                adminToken: randomBytes(32).toString("hex"),
+                adminSocketId: socket.id,
+                houseBonuses: {},
     
                 kickedPlayers: new Set()
     
@@ -1657,15 +1673,34 @@ io.on("connection", (socket) => {
                 `Создана новая игра: ${gameId}`
             );
     
-            socket.emit(
-                "admin:game_created",
-                {
-                    gameId
-                }
-            );
+            socket.emit("admin:game_created", { gameId, adminToken: game.adminToken });
     
         }
     );
+
+    socket.on("admin:restore_game", ({ gameId, adminToken } = {}) => {
+        const id = typeof gameId === "string" ? gameId.trim().toUpperCase() : "";
+        const game = games.get(id);
+        if (!game || !isValidAdminToken(game, adminToken)) {
+            socket.emit("admin:restore_error", {
+                message: "Игра не найдена или доступ администратора недействителен."
+            });
+            return;
+        }
+        const previous = io.sockets.sockets.get(game.adminSocketId);
+        if (previous && previous.id !== socket.id) {
+            previous.isAdmin = false;
+            previous.leave(`game_${id}`);
+        }
+        socket.join(`game_${id}`);
+        socket.gameId = id;
+        socket.isAdmin = true;
+        game.adminSocketId = socket.id;
+        socket.emit("admin:game_restored", {
+            gameId: id, status: game.status, paused: game.status === "paused"
+        });
+        broadcastLobbyUpdate(game);
+    });
 
         // ==================================================
         // PLAYER: JOIN GAME
