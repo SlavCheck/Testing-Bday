@@ -2582,3 +2582,10 @@ button:disabled {
   .snitch-dialogue-content { padding: 18px; }
   .snitch-line { min-height: 130px; }
 }
+
+/* Background for the Snitch investigation; supplied room image. */
+.snitch-mystery {
+    background:
+        linear-gradient(rgba(9, 12, 27, .78), rgba(12, 11, 25, .92)),
+        url("/assets/newyear/room.png") center / cover fixed;
+}
