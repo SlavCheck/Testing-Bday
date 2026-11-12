@@ -267,10 +267,8 @@ const HOUSE_NAMES = {
 };
 function showAssignedHouse(house) {
     if (!house) return;
-    currentHouse = house;
     if (selectedTeamText) selectedTeamText.textContent =
         `Твой факультет: ${HOUSE_NAMES[house] || house}`;
-    renderHouseScore();
 }
 
 const characterName =
@@ -2009,18 +2007,6 @@ socket.on(
 // ==================================================
 // LOBBY UPDATE
 // ==================================================
-
-let currentHouse = null;
-let currentHouseScores = {};
-function renderHouseScore() {
-    const el = document.getElementById("houseScore");
-    if (el) el.textContent = currentHouse
-        ? String(currentHouseScores[currentHouse] ?? 0) : "0";
-}
-socket.on("house:scores", ({ scores }) => {
-    currentHouseScores = scores || {};
-    renderHouseScore();
-});
 
 // ==================================================
 // BUG SEARCH RESULT
