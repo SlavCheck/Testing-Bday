@@ -10,7 +10,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Star Test Quest</title>
+    <title>Турнир Четырёх Факультетов</title>
 
     <link rel="stylesheet" href="/css/style.css">
 
@@ -38,11 +38,9 @@
 
         <section id="joinScreen">
 
-            <h1>Тестовые войны: Империя багов</h1>
+            <h1>Турнир Четырёх Факультетов</h1>
 
-            <p>
-                Давным-давно, в одной далёкой галактике... Корпорация "Империя Продакшена" готовит к запуску глобальное обновление прошивки для всех умных устройств — релиз 4.2. Но Повстанческий Альянс Тестирования узнал страшную правду: в коде есть уязвимость. Империя утверждает, что релиз готов. Но Сила подсказывает: что-то здесь не так. Очень не так. Вы — экипаж «Тысячелетнего Сокола» (коворкинг на 1 этаже). Не группа одиночек, а единая команда. Только вместе вы сможете найти баг, спасти релиз и доказать, что Империя не непобедима!
-            </p>
+            <p>Дорогие студенты! Сегодня мы собрались, чтобы отпраздновать Новый год. Но этот год особенный: нас ждёт Турнир Четырёх Факультетов! Каждый факультет должен проявить свои навыки тестирования магии</p>
 
             <audio
                 id="welcomeVoice"
@@ -199,24 +197,24 @@
     </div>
 
     <section id="snitchMystery" class="snitch-mystery hidden" aria-label="Расследование исчезновения Снитча">
-        <h1 id="snitchTitle"></h1>
+    <h1 id="snitchTitle"></h1>
+    <div id="snitchDialogue" class="snitch-dialogue">
+        <img id="snitchPortrait" alt="" class="snitch-portrait">
+        <div class="snitch-dialogue-content">
+            <p id="snitchSpeaker" class="snitch-speaker"></p>
+            <p id="snitchLine" class="snitch-line" aria-live="polite"></p>
+            <button id="snitchNext" type="button">Далее</button>
+        </div>
+    </div>
+    <div id="snitchVoting" class="hidden">
         <p id="snitchDescription"></p>
         <h2>Улики</h2>
         <ul id="snitchClues"></ul>
-        <h2>Показания подозреваемых</h2>
+        <h2>Кто украл Снитч?</h2>
         <div id="snitchSuspects" class="snitch-suspects"></div>
         <p id="snitchAnswerStatus" role="status"></p>
-    </section>
-
-    <section id="snitchMystery" class="snitch-mystery hidden" aria-label="Расследование исчезновения Снитча">
-        <h1 id="snitchTitle"></h1>
-        <p id="snitchDescription"></p>
-        <h2>Улики</h2>
-        <ul id="snitchClues"></ul>
-        <h2>Показания подозреваемых</h2>
-        <div id="snitchSuspects" class="snitch-suspects"></div>
-        <p id="snitchAnswerStatus" role="status"></p>
-    </section>
+    </div>
+</section>
 
     <div
     id="bugSearch"
