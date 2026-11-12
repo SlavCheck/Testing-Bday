@@ -259,8 +259,16 @@ const teamStatus =
     document.getElementById("teamStatus");
 
 
-const teamButtons =
-    document.querySelectorAll(".team-button");
+const HOUSE_NAMES = {
+    gryffindor: "🦁 Гриффиндор",
+    slytherin: "🐍 Слизерин",
+    ravenclaw: "🦅 Когтевран",
+    hufflepuff: "🦡 Пуффендуй"
+};
+function showAssignedHouse(house) {
+    if (selectedTeamText && house) selectedTeamText.textContent =
+        `Твой факультет: ${HOUSE_NAMES[house] || house}`;
+}
 
 const characterName =
     document.getElementById("characterName");   // <-- добавляем
@@ -1442,6 +1450,7 @@ socket.on(
         nickname,
         restored = false,
         team = null,
+        house = null,
         gameStarted = false,
         scene = null,
         timer = null,
@@ -1454,6 +1463,7 @@ socket.on(
                 nickname,
                 restored,
                 team,
+                house,
                 gameStarted,
                 scene,
                 timer,
@@ -1512,27 +1522,7 @@ socket.on(
             );
 
 
-            // ------------------------------------------
-            // Восстанавливаем команду
-            // ------------------------------------------
-
-            if (team) {
-
-                const teamNames = {
-
-                    strategist: "Стратеги",
-                    joker: "Шутники",
-                    critic: "Критики"
-
-                };
-
-                selectedTeamText.textContent =
-                    `Твоя команда: ${
-                        teamNames[team] || team
-                    }`;
-
-            }
-
+            showAssignedHouse(house || team);
 
             // ------------------------------------------
             // Игра уже началась
@@ -1582,40 +1572,10 @@ socket.on(
 
 
         lobbyScreen.classList.add("hidden");
-        waitingScreen.classList.add("hidden");
+        teamScreen.classList.add("hidden");
         gameScreen.classList.add("hidden");
-
-        teamScreen.classList.remove("hidden");
-
-
-        if (
-            voiceEnabled &&
-            teamVoice
-        ) {
-
-            stopVoice();
-
-            currentVoice =
-                teamVoice;
-
-            teamVoice.currentTime = 0;
-
-            teamVoice.play()
-                .catch(error => {
-
-                    console.warn(
-                        "Не удалось запустить озвучку выбора команды:",
-                        error
-                    );
-
-                });
-
-        }
-
-
-        console.log(
-            "Новый игрок находится на экране выбора команды."
-        );
+        showAssignedHouse(house || team);
+        waitingScreen.classList.remove("hidden");
 
     }
 );
@@ -1629,6 +1589,7 @@ socket.on(
         gameId,
         nickname,
         team,
+        house,
         score,
         status,
         scene,
@@ -1674,20 +1635,13 @@ socket.on(
         kickedScreen?.classList.add("hidden");
         gameScreen?.classList.remove("hidden");
 
-        /* -------------------------------------------------
-         * 3️⃣ Восстанавливаем команду (если уже выбрана)
-         * ------------------------------------------------- */
-        if (team) {
-            const teamNames = {
-                strategist: "Стратеги",
-                joker: "Шутники",
-                critic: "Критики"
-            };
-            if (selectedTeamText) {
-                selectedTeamText.textContent =
-                    `Твоя команда: ${teamNames[team] || team}`;
-            }
+        showAssignedHouse(house || team);
+        if (status === "lobby") {
+            gameScreen?.classList.add("hidden");
+            waitingScreen?.classList.remove("hidden");
+            return;
         }
+
         // -------------------------------------------------
         // 4️⃣ Восстанавливаем таймер сцены
         // -------------------------------------------------
@@ -2053,44 +2007,23 @@ socket.on(
 // LOBBY UPDATE
 // ==================================================
 
-socket.on(
-    "lobby:update",
-    ({ players }) => {
-
-        console.log(
-            "Обновление lobby:",
-            players
-        );
-
-
-        lobbyPlayerCount.textContent =
-            players.length;
-
-
-        // Если игроки находятся в lobby
-        // и ещё не выбрали команду,
-        // показываем выбор команды.
-
-        const currentPlayer =
-            players.find(
-                player =>
-                    player.id === playerId
-            );
-
-
-        if (
-            currentPlayer &&
-            !currentPlayer.team &&
-            !teamScreen.classList.contains("hidden")
-        ) {
-
-            return;
-
-        }
-
+socket.on("lobby:update", ({ players }) => {
+    if (lobbyPlayerCount) lobbyPlayerCount.textContent = players.length;
+    const waitingCount = document.getElementById("waitingPlayerCount");
+    if (waitingCount) waitingCount.textContent = players.length;
+    const list = document.getElementById("houseLobbyList");
+    if (!list) return;
+    list.replaceChildren();
+    const heading = document.createElement("p");
+    heading.textContent = "Участники и факультеты:";
+    list.appendChild(heading);
+    for (const player of players) {
+        const item = document.createElement("div");
+        item.textContent = `${player.nickname} — ${HOUSE_NAMES[player.house] || "Ожидает распределения"}`;
+        list.appendChild(item);
+        if (player.id === playerId) showAssignedHouse(player.house);
     }
-);
-
+});
 
 // ==================================================
 // BUG SEARCH RESULT
@@ -2379,104 +2312,6 @@ function finishBugSearch() {
      * истечения duration.
      */
 }
-
-// ==================================================
-// TEAM BUTTONS
-// ==================================================
-teamButtons.forEach(
-    (button) => {
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                const team =
-                    button.dataset.team;
-
-                console.log(
-                    "Выбрана команда:",
-                    team
-                );
-
-                // Визуально показываем выбранную команду
-                markSelectedButton(
-                    button,
-                    ".team-buttons"
-                );
-
-                // Блокируем кнопки,
-                // пока сервер не подтвердит выбор
-                teamButtons.forEach(
-                    btn => {
-                        btn.disabled = true;
-                    }
-                );
-
-                teamStatus.textContent =
-                    "Сохраняем выбор...";
-
-                socket.emit(
-                    "player:choose_team",
-                    {
-                        team
-                    }
-                );
-
-            }
-        );
-
-    }
-);
-
-
-// ==================================================
-// TEAM SELECTED
-// ==================================================
-
-socket.on(
-    "player:team_selected",
-    ({ team }) => {
-
-        console.log(
-            "Сервер подтвердил команду:",
-            team
-        );
-
-
-        const teamNames = {
-
-            strategist:
-                "Стратеги",
-
-            joker:
-                "Шутники",
-
-            critic:
-                "Критики"
-
-        };
-
-
-        const teamName =
-            teamNames[team];
-
-
-        selectedTeamText.textContent =
-            `Твоя команда: ${teamName}`;
-
-
-        teamScreen.classList.add(
-            "hidden"
-        );
-
-
-        waitingScreen.classList.remove(
-            "hidden"
-        );
-
-    }
-);
-
 
 // ==================================================
 // GAME STARTED
