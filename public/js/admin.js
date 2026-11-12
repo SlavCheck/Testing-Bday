@@ -80,6 +80,42 @@ const adminStatus =
     );
 
 
+const ADMIN_SESSION_KEY = "testingBday_adminSession";
+function showAdminGame(gameId, status = "lobby") {
+    gameCodeElement.textContent = gameId;
+    lobbyLink.value = `${window.location.origin}/?game=${gameId}`;
+    createGameSection.classList.add("hidden");
+    gameSection.classList.remove("hidden");
+    const isLobby = status === "lobby";
+    const paused = status === "paused";
+    startGameButton.disabled = !isLobby;
+    startGameButton.textContent = isLobby ? "🚀 НАЧАТЬ ИГРУ" : "ИГРА ИДЁТ";
+    pauseGameButton.classList.toggle("hidden", isLobby || status === "finished");
+    pauseGameButton.disabled = isLobby || status === "finished";
+    pauseGameButton.dataset.paused = String(paused);
+    pauseGameButton.textContent = paused ? "▶ ПРОДОЛЖИТЬ" : "⏸ ПАУЗА";
+    adminStatus.textContent = isLobby ? "Ожидаем игроков..." :
+        paused ? "⏸ ИГРА НА ПАУЗЕ" :
+        status === "finished" ? "Игра завершена" : "🚀 ИГРА ЗАПУЩЕНА";
+}
+socket.on("connect", () => {
+    const saved = localStorage.getItem(ADMIN_SESSION_KEY);
+    if (!saved) return;
+    try {
+        const session = JSON.parse(saved);
+        if (session.gameId && session.adminToken) socket.emit("admin:restore_game", session);
+    } catch { localStorage.removeItem(ADMIN_SESSION_KEY); }
+});
+socket.on("admin:game_restored", ({ gameId, status }) => showAdminGame(gameId, status));
+socket.on("admin:restore_error", ({ message }) => {
+    localStorage.removeItem(ADMIN_SESSION_KEY);
+    createGameSection.classList.remove("hidden");
+    gameSection.classList.add("hidden");
+    createGameButton.disabled = false;
+    createGameButton.textContent = "СОЗДАТЬ ИГРУ";
+    console.warn(message);
+});
+
 // ==================================================
 // CREATE GAME
 // ==================================================
@@ -110,55 +146,10 @@ createGameButton.addEventListener(
 // GAME CREATED
 // ==================================================
 
-socket.on(
-    "admin:game_created",
-    ({ gameId }) => {
-
-        console.log(
-            "Игра создана:",
-            gameId
-        );
-
-        gameCodeElement.textContent =
-            gameId;
-            
-        const playerUrl =
-            `${window.location.origin}/?game=${gameId}`;
-        
-        lobbyLink.value =
-            playerUrl;
-        
-        console.log(
-            "Ссылка для игроков:",
-            playerUrl
-        );
-
-
-        createGameSection.classList.add(
-            "hidden"
-        );
-
-
-        gameSection.classList.remove(
-            "hidden"
-        );
-
-
-        adminStatus.textContent =
-            "Ожидаем игроков...";
-
-
-        // Очень полезно:
-        // показываем ссылку игрокам
-
-        console.log(
-            "Ссылка для игроков:",
-            `${window.location.origin}/?game=${gameId}`
-        );
-
-    }
-);
-
+socket.on("admin:game_created", ({ gameId, adminToken }) => {
+    localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify({ gameId, adminToken }));
+    showAdminGame(gameId, "lobby");
+});
 
 // ==================================================
 // LOBBY UPDATE
