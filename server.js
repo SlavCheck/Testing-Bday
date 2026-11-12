@@ -582,7 +582,7 @@ function getHouseScores(game) {
     return scores;
 }
 function broadcastHouseScores(game) {
-    io.to(`game_${game.id}`).emit("house:scores", { scores: getHouseScores(game) });
+    // House totals stay server-side until the final results scene.
 }
 function broadcastLobbyUpdate(game) {
     const players = [...game.players.values()].map(player => ({
