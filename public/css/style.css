@@ -3227,3 +3227,42 @@ button:disabled {
   .garland-options { gap: 8px; margin: 14px 0 10px; }
   .garland-option { min-height: 56px; }
 }
+
+
+/* Invisibility cloak: find the subtle distortion among four quadrants. */
+.cloak-search {
+  position: absolute; inset: 0; z-index: 9;
+  display: flex; align-items: center; justify-content: center;
+  padding: 65px 14px 18px; overflow: hidden;
+  color: #eafff0;
+  background: linear-gradient(rgba(3,20,12,.3),rgba(3,20,12,.72)), url("/assets/backgrounds/NewYearBG/hallway.png") center / cover no-repeat;
+}
+.cloak-search.hidden { display: none !important; }
+.cloak-card {
+  width: min(750px, 100%); max-height: 100%; text-align: center;
+  padding: clamp(14px, 2.8vw, 28px); border-radius: 18px;
+  background: rgba(4, 29, 18, .88); border: 2px solid rgba(123,215,156,.62);
+  overflow: auto;
+}
+.cloak-card h1 { color: #adf7c8; font-size: clamp(22px, 3vw, 34px); margin: 0 0 8px; }
+.cloak-card p { margin: 8px 0 14px; }
+.cloak-zones { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.cloak-zone {
+  position: relative; min-width: 0; height: clamp(105px, 22vh, 210px);
+  border: 2px solid rgba(126,204,156,.48); border-radius: 12px;
+  background: radial-gradient(ellipse at 45% 45%,rgba(62,131,91,.25),transparent 65%), repeating-linear-gradient(135deg,rgba(139,213,163,.045) 0 2px,transparent 2px 15px), #0c2a1b;
+  color: #c9f9d9; cursor: pointer; overflow: hidden;
+}
+.cloak-rune { display: block; font-size: clamp(45px,8vw,85px); line-height: 1; opacity: .65; text-shadow: 0 0 12px #71cda17a; }
+.cloak-zone-2 .cloak-rune { filter: blur(2.5px); opacity: .35; transform: skew(-9deg,5deg) scale(1.1); text-shadow: 8px 0 9px #b9ffe5a0, -7px 0 10px #b9ffe56b; }
+.cloak-zone-2::before { content: ""; position: absolute; inset: 12% 26%; border-radius: 48%; border: 1px solid rgba(206,255,228,.2); transform: skew(-12deg); pointer-events: none; }
+.cloak-zone-label { position: absolute; bottom: 9px; left: 0; right: 0; font-size: 14px; }
+.cloak-zone.selected { border-color: #7effac; box-shadow: inset 0 0 0 2px #7effac44; }
+.cloak-zone.selected::after { content: "✓"; position: absolute; top: 8px; right: 12px; font-size: 23px; color: #a9ffc7; }
+.cloak-zone:focus-visible { outline: 3px solid #a9ffc7; }
+.cloak-feedback { min-height: 22px; font-size: 14px; color: #c7efd2; }
+@media (max-width: 540px) {
+  .cloak-search { padding: 55px 8px 8px; }
+  .cloak-zones { gap: 7px; }
+  .cloak-zone { height: clamp(95px, 21vh, 165px); }
+}
