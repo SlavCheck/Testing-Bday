@@ -2362,6 +2362,12 @@ function renderPotionRecipe(scene, timer, restoredAnswer) {
     const feedback = document.getElementById("potionFeedback");
     const end = timer?.endsAt || Date.now() + scene.duration * 1000;
     const selectionStart = end - (scene.duration - scene.memorizeSeconds) * 1000;
+    // Shuffle once per scene rendering, not on each countdown tick or selection.
+    const shuffledIngredients = scene.ingredients.slice();
+    for (let i = shuffledIngredients.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledIngredients[i], shuffledIngredients[j]] = [shuffledIngredients[j], shuffledIngredients[i]];
+    }
     // The recipe is shown as prose on parchment, not as a list of ingredients.
     function refresh() {
         if (currentScene?.type !== "potion_recipe") {
@@ -2378,7 +2384,7 @@ function renderPotionRecipe(scene, timer, restoredAnswer) {
         parchment.classList.toggle("hidden", !memorizing);
         ingredients.classList.toggle("hidden", memorizing);
         ingredients.replaceChildren();
-        for (const item of memorizing ? [] : scene.ingredients) {
+        for (const item of memorizing ? [] : shuffledIngredients) {
             const button = document.createElement("button");
             button.type = "button";
             button.className = "potion-ingredient";
