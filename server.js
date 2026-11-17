@@ -13,6 +13,7 @@ const introScene =
 const snitchScene = require("./game/scenes/snitch-theft");
 const snitchAnnouncement = require("./game/scenes/snitch-announcement");
 const snitchFlight = require("./game/scenes/snitch-flight");
+const garlandFire = require("./game/scenes/garland-fire");
 const { assignNextHouse } = require("./game/services/houses");
 
 const PORT = process.env.PORT || 3000;
@@ -779,6 +780,14 @@ function moveToNextScene(game) {
         game.snitchFlightStartedAt = Date.now();
         startSceneTimer(game, snitchFlight.duration);
         io.to(`game_${game.id}`).emit("game:started", { scene: game.currentScene, timer: game.sceneTimer });
+        return;
+    }
+
+    if (game.currentScene?.id === "snitch-flight") {
+        game.currentScene = garlandFire;
+        for (const player of game.players.values()) player.garlandAnswer = null;
+        startSceneTimer(game, garlandFire.duration);
+        io.to(`game_${game.id}`).emit("game:started", { scene: garlandFire, timer: game.sceneTimer });
         return;
     }
 
@@ -2196,6 +2205,21 @@ socket.on(
         socket.emit("snitch:flight_result", { delta, score: player.score });
     });
 
+    socket.on("garland:answer", ({ answerId } = {}) => {
+        if (!socket.gameId || typeof answerId !== "string") return;
+        const game = games.get(socket.gameId);
+        if (!game || game.status !== "playing" || game.currentScene?.id !== "garland-fire" ||
+            !game.sceneTimer || Date.now() >= game.sceneTimer.endsAt) return;
+        if (!garlandFire.options.some(option => option.id === answerId)) return;
+        const player = [...game.players.values()].find(p => p.socketId === socket.id);
+        if (!player) return;
+        const previousCorrect = player.garlandAnswer === "incendio";
+        const nextCorrect = answerId === "incendio";
+        if (previousCorrect !== nextCorrect) player.score += nextCorrect ? garlandFire.points : -garlandFire.points;
+        player.garlandAnswer = answerId;
+        socket.emit("garland:answer_result", { answerId });
+    });
+
     // Developer-only scene jump. Requires the authenticated admin socket.
     socket.on("admin:jump_scene", ({ sceneId } = {}) => {
         if (!socket.isAdmin || !socket.gameId) return;
@@ -2204,13 +2228,17 @@ socket.on(
         const allowed = {
             "snitch-announcement": snitchAnnouncement,
             "snitch-theft": snitchScene,
-            "snitch-flight": snitchFlight
+            "snitch-flight": snitchFlight,
+            "garland-fire": garlandFire
         };
         if (!Object.prototype.hasOwnProperty.call(allowed, sceneId)) return;
         if (game.sceneTimerTimeout) clearTimeout(game.sceneTimerTimeout);
         game.sceneTimerTimeout = null;
         game.sceneTimer = null;
         game.currentScene = sceneId === "snitch-flight" ? { ...snitchFlight } : allowed[sceneId];
+        if (sceneId === "garland-fire") {
+            for (const player of game.players.values()) player.garlandAnswer = null;
+        }
         if (sceneId === "snitch-flight") {
             for (const player of game.players.values()) {
                 player.flightCaughtWindows = new Set();
