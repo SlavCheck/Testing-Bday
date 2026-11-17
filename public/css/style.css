@@ -2708,3 +2708,31 @@ button:disabled {
   .snitch-nav button { padding: 8px; font-size: 11px; }
   #snitchProgress { font-size: 11px; }
 }
+
+
+/* New Year investigation palette: emerald accents instead of gold. */
+.snitch-mystery h1,
+.snitch-mystery h2,
+.snitch-speaker,
+#snitchProgress { color: #8fe3b0; }
+.snitch-dialogue {
+  border-color: #398d65;
+  background: linear-gradient(120deg, rgba(10,30,28,.97), rgba(15,38,34,.96));
+  box-shadow: 0 0 0 3px rgba(10,41,30,.8), 0 16px 45px #0009, inset 0 0 26px #39a77920;
+}
+.snitch-portrait {
+  border-color: #80cba5;
+  background: radial-gradient(ellipse at 50% 20%, #315e4b, #101d23 75%);
+  box-shadow: inset 0 0 0 4px #173a2d, 0 0 0 2px #397c5c, 0 6px 20px #0009;
+}
+.snitch-nav button,
+#snitchNext {
+  background: #2c9968;
+  color: #f5fff9;
+}
+.snitch-nav button:not(:disabled):hover,
+#snitchNext:not(:disabled):hover { background: #36b87e; }
+#snitchVoting { border-color: rgba(80,179,126,.48); }
+.snitch-suspect { border-color: #43896b; background: rgba(15,39,35,.9); }
+.snitch-suspect:hover:not(:disabled) { border-color: #7fdbac; }
+.snitch-suspect.selected { border-color: #76e2a5; box-shadow: 0 0 0 2px #268c60; }
