@@ -80,6 +80,7 @@ function showGameTeamCards(gameType) {
     currentAdminGameType = gameType === "classic" ? "classic" : "harry-potter";
     document.getElementById("houseTeamCards").classList.toggle("hidden", currentAdminGameType === "classic");
     document.getElementById("classicTeamCards").classList.toggle("hidden", currentAdminGameType !== "classic");
+    document.getElementById("devScenePanel")?.classList.toggle("hidden", currentAdminGameType === "classic");
 }
 
 const playerList =
