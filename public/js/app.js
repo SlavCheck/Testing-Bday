@@ -2345,8 +2345,8 @@ function renderSnitchFlight(scene, timer) {
         const w = Math.max(0, arena.clientWidth - snitch.offsetWidth);
         const h = Math.max(0, arena.clientHeight - snitch.offsetHeight);
         // Continuous movement with accelerating and decelerating velocity.
-        const x = (0.5 + 0.46 * Math.sin(elapsed * 1.7 + 0.75 * Math.sin(elapsed * 0.85))) * w;
-        const y = (0.5 + 0.43 * Math.sin(elapsed * 2.3 + 1.2 * Math.sin(elapsed * 0.58))) * h;
+        const x = (0.5 + 0.38 * Math.sin(elapsed * 0.85 + 0.35 * Math.sin(elapsed * 0.42))) * w;
+        const y = (0.5 + 0.32 * Math.sin(elapsed * 1.05 + 0.4 * Math.sin(elapsed * 0.32))) * h;
         snitch.style.transform = `translate3d(${x}px, ${y}px, 0)`;
         if (remaining > 0) flightAnimationFrame = requestAnimationFrame(animate);
     };
