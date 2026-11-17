@@ -128,7 +128,8 @@ socket.on("admin:restore_error", ({ message }) => {
     createGameSection.classList.remove("hidden");
     gameSection.classList.add("hidden");
     createGameButton.disabled = false;
-    createGameButton.textContent = "СОЗДАТЬ ИГРУ";
+    createGameButton.textContent = "⚡ СОЗДАТЬ ГАРРИ ПОТТЕР: БИТВА ЗА НОВЫЙ ГОД";
+    document.getElementById("createClassicGameButton").disabled = false;
     console.warn(message);
 });
 
