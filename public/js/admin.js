@@ -476,7 +476,7 @@ document.getElementById("devSceneJump")?.addEventListener("click", () => {
     const sceneId = document.getElementById("devSceneSelect").value;
     socket.emit("admin:jump_scene", { sceneId });
 });
-for (const [buttonId, sceneId] of [["devPotionIntro", "potion-intro"], ["devPotionRecipe", "potion-recipe"]]) {
+for (const [buttonId, sceneId] of [["devPotionIntro", "potion-intro"], ["devPotionRecipe", "potion-recipe"], ["devNegativePotion", "potion-negative-intro"]]) {
     document.getElementById(buttonId)?.addEventListener("click", () => {
         document.getElementById("devSceneSelect").value = sceneId;
         const status = document.getElementById("devSceneStatus");
