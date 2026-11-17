@@ -1591,7 +1591,6 @@ socket.on(
         team,
         house,
         snitchAnswer,
-        snitchDialogueComplete,
         score,
         status,
         scene,
@@ -1754,8 +1753,6 @@ socket.on(
          * ------------------------------------------------- */
         currentScene = scene;
         if (scene.type === "snitch_mystery") {
-            snitchVotingActive = Boolean(timer?.endsAt);
-            snitchDialogueDone = Boolean(snitchDialogueComplete) || snitchVotingActive;
             renderSnitchMystery(scene, snitchAnswer);
             return;
         }
@@ -2303,11 +2300,9 @@ function finishBugSearch() {
      */
 }
 
-// Dialogue progress is local; voting starts for everyone only when all players are ready.
+// All players share the server's 90-second clock. Only testimony navigation is local.
 let savedSnitchAnswer = null;
 let snitchDialogueIndex = 0;
-let snitchDialogueDone = false;
-let snitchVotingActive = false;
 let snitchTypingTimer = null;
 function showSnitchLine(scene) {
     const line = scene.dialogues[snitchDialogueIndex];
@@ -2315,40 +2310,38 @@ function showSnitchLine(scene) {
     const speaker = document.getElementById("snitchSpeaker");
     const text = document.getElementById("snitchLine");
     const portrait = document.getElementById("snitchPortrait");
+    const previous = document.getElementById("snitchPrevious");
     const next = document.getElementById("snitchNext");
+    const progress = document.getElementById("snitchProgress");
     speaker.textContent = line.name;
     portrait.src = line.image;
     portrait.alt = line.name;
     portrait.onerror = () => { portrait.style.visibility = "hidden"; };
     portrait.style.visibility = "visible";
+    progress.textContent = `${snitchDialogueIndex + 1} / ${scene.dialogues.length}`;
+    previous.disabled = snitchDialogueIndex === 0;
+    next.disabled = snitchDialogueIndex === scene.dialogues.length - 1;
     clearInterval(snitchTypingTimer);
     let index = 0;
     text.textContent = "";
-    next.textContent = "Показать полностью";
-    const reveal = () => {
-        clearInterval(snitchTypingTimer);
-        text.textContent = line.text;
-        next.textContent = snitchDialogueIndex === scene.dialogues.length - 1 ? "Перейти к голосованию" : "Далее";
-    };
     snitchTypingTimer = setInterval(() => {
         if (isGamePaused) return;
-        index = Math.min(index + 3, line.text.length);
+        index = Math.min(index + 4, line.text.length);
         text.textContent = line.text.slice(0, index);
-        if (index >= line.text.length) reveal();
-    }, 25);
+        if (index === line.text.length) clearInterval(snitchTypingTimer);
+    }, 18);
+    previous.onclick = () => {
+        if (isGamePaused || snitchDialogueIndex === 0) return;
+        snitchDialogueIndex--;
+        showSnitchLine(scene);
+    };
     next.onclick = () => {
-        if (isGamePaused) return;
-        if (index < line.text.length) { index = line.text.length; reveal(); return; }
-        clearInterval(snitchTypingTimer);
-        if (++snitchDialogueIndex < scene.dialogues.length) showSnitchLine(scene);
-        else {
-            snitchDialogueDone = true;
-            socket.emit("snitch:dialogue_complete");
-            renderSnitchMystery(scene, savedSnitchAnswer);
-        }
+        if (isGamePaused || snitchDialogueIndex === scene.dialogues.length - 1) return;
+        snitchDialogueIndex++;
+        showSnitchLine(scene);
     };
 }
-function renderSnitchMystery(scene, answer = null, restore = false) {
+function renderSnitchMystery(scene, answer = null) {
     const panel = document.getElementById("snitchMystery");
     if (!panel) return;
     savedSnitchAnswer = answer;
@@ -2358,11 +2351,9 @@ function renderSnitchMystery(scene, answer = null, restore = false) {
     charactersLayer?.replaceChildren();
     if (gameBackground) gameBackground.style.backgroundImage = "none";
     document.getElementById("snitchTitle").textContent = scene.title;
-    const dialogue = document.getElementById("snitchDialogue");
-    const voting = document.getElementById("snitchVoting");
-    dialogue.classList.toggle("hidden", snitchDialogueDone || snitchVotingActive);
-    voting.classList.toggle("hidden", !snitchDialogueDone && !snitchVotingActive);
-    if (!snitchDialogueDone && !snitchVotingActive) { showSnitchLine(scene); return; }
+    document.getElementById("snitchDialogue").classList.remove("hidden");
+    document.getElementById("snitchVoting").classList.remove("hidden");
+    showSnitchLine(scene);
     document.getElementById("snitchDescription").textContent = scene.text;
     const clues = document.getElementById("snitchClues");
     clues.replaceChildren();
@@ -2385,27 +2376,30 @@ function renderSnitchMystery(scene, answer = null, restore = false) {
         const name = document.createElement("strong");
         name.textContent = suspect.name;
         button.append(img, name);
-        button.disabled = Boolean(savedSnitchAnswer) || !snitchVotingActive || isGamePaused;
+        button.disabled = Boolean(savedSnitchAnswer) || isGamePaused;
         if (savedSnitchAnswer === suspect.id) button.classList.add("selected");
         button.addEventListener("click", () => {
-            if (savedSnitchAnswer || isGamePaused || !snitchVotingActive) return;
+            if (savedSnitchAnswer || isGamePaused) return;
             socket.emit("snitch:answer", { suspectId: suspect.id });
         });
         suspects.appendChild(button);
     }
     document.getElementById("snitchAnswerStatus").textContent = savedSnitchAnswer
         ? "Ответ принят. Ждём окончания испытания."
-        : snitchVotingActive ? "Выбери одного подозреваемого. Ответ изменить нельзя."
-        : "Ожидаем, пока все игроки прочитают показания...";
+        : "Выбери одного подозреваемого до конца общего таймера. Ответ изменить нельзя.";
 }
-socket.on("snitch:voting_started", () => {
-    snitchVotingActive = true;
-    snitchDialogueDone = true;
-    clearInterval(snitchTypingTimer);
-    if (currentScene?.type === "snitch_mystery") renderSnitchMystery(currentScene, savedSnitchAnswer);
-});
 socket.on("snitch:answer_saved", ({ suspectId }) => {
-    if (currentScene?.type === "snitch_mystery") renderSnitchMystery(currentScene, suspectId);
+    if (currentScene?.type === "snitch_mystery") {
+        savedSnitchAnswer = suspectId;
+        const buttons = document.querySelectorAll("#snitchSuspects .snitch-suspect");
+        currentScene.suspects.forEach((suspect, i) => {
+            if (buttons[i]) {
+                buttons[i].disabled = true;
+                buttons[i].classList.toggle("selected", suspect.id === suspectId);
+            }
+        });
+        document.getElementById("snitchAnswerStatus").textContent = "Ответ принят. Ждём окончания испытания.";
+    }
 });
 
 // ==================================================
@@ -2463,8 +2457,6 @@ socket.on(
         if (scene.type === "snitch_mystery") {
             hideSceneTransition();
             snitchDialogueIndex = 0;
-            snitchDialogueDone = false;
-            snitchVotingActive = false;
             renderSnitchMystery(scene);
             return;
         }
