@@ -2762,3 +2762,72 @@ button:disabled {
   border: 2px solid #398d65;
   box-shadow: 0 0 0 3px rgba(10,41,30,.8), 0 16px 45px #0009, inset 0 0 26px #39a77920;
 }
+
+
+/* Minimal investigation: 2x2 suspect grid, bottom dialogue stays framed. */
+.snitch-mystery {
+  grid-template-rows: minmax(0, 1fr) minmax(210px, 30%);
+}
+#snitchVoting {
+  width: min(100%, 780px);
+  justify-content: center;
+  align-items: stretch;
+  gap: clamp(8px, 1.2vh, 16px);
+  overflow: hidden;
+}
+#snitchTitle {
+  font-size: clamp(22px, 2.6vw, 36px);
+  margin: 0;
+  text-align: center;
+}
+.snitch-suspects {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: clamp(8px, 1.4vh, 16px);
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.snitch-suspect {
+  position: relative;
+  min-height: 0;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(8px, 1.2vw, 20px);
+  padding: clamp(7px, 1vh, 14px);
+  font-size: clamp(15px, 1.5vw, 21px);
+  cursor: pointer;
+}
+.snitch-suspect-image {
+  width: min(38%, 120px);
+  height: 100%;
+  max-height: 120px;
+  object-fit: contain;
+}
+.snitch-check {
+  display: none;
+  position: absolute;
+  right: 12px;
+  top: 9px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #2baf75;
+  color: white;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 30px;
+  text-align: center;
+}
+.snitch-suspect.selected .snitch-check { display: block; }
+#snitchAnswerStatus { margin: 0; padding: 0; font-size: 13px; min-height: 0; }
+@media (max-width: 767px) {
+  .snitch-mystery { grid-template-rows: minmax(0, 1fr) minmax(190px, 37%); }
+  #snitchVoting { overflow: hidden; gap: 6px; }
+  #snitchTitle { font-size: clamp(17px, 4.7vw, 23px); }
+  .snitch-suspects { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .snitch-suspect { flex-direction: column; padding: 4px; gap: 2px; font-size: 12px; }
+  .snitch-suspect-image { width: 100%; height: min(9vh, 65px); }
+  .snitch-check { right: 4px; top: 4px; width: 22px; height: 22px; line-height: 22px; font-size: 16px; }
+}
