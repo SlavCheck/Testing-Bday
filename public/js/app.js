@@ -1752,6 +1752,10 @@ socket.on(
          * 6️⃣ Сохраняем сцену в глобальную переменную
          * ------------------------------------------------- */
         currentScene = scene;
+        if (scene.type === "cloak_search") {
+            renderCloakSearch(scene);
+            return;
+        }
         if (scene.type === "garland_fire") {
             renderGarlandFire(scene);
             return;
@@ -2322,6 +2326,53 @@ function stopSnitchFlight() {
     document.querySelectorAll(".snitch-score-popup").forEach(node => node.remove());
     document.getElementById("snitchFlight")?.classList.add("hidden");
 }
+let cloakSelectedZone = null;
+function renderCloakSearch(scene) {
+    stopSnitchFlight();
+    document.getElementById("snitchMystery")?.classList.add("hidden");
+    document.getElementById("garlandFire")?.classList.add("hidden");
+    dialoguePanel?.classList.add("hidden");
+    bugSearch?.classList.add("hidden");
+    charactersLayer?.replaceChildren();
+    document.getElementById("cloakSearch").classList.remove("hidden");
+    document.getElementById("cloakTitle").textContent = scene.title;
+    document.getElementById("cloakQuestion").textContent = scene.question;
+    const zones = document.getElementById("cloakZones");
+    zones.replaceChildren();
+    const feedback = document.getElementById("cloakFeedback");
+    feedback.textContent = cloakSelectedZone === null ? "Выбери один из четырёх участков." : "Участок выбран. Ответ можно изменить.";
+    for (let zone = 0; zone < 4; zone++) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "cloak-zone cloak-zone-" + zone;
+        button.setAttribute("aria-label", "Участок " + (zone + 1));
+        button.setAttribute("aria-pressed", String(cloakSelectedZone === zone));
+        button.classList.toggle("selected", cloakSelectedZone === zone);
+        const rune = document.createElement("span");
+        rune.className = "cloak-rune";
+        rune.textContent = "✦";
+        button.appendChild(rune);
+        const label = document.createElement("span");
+        label.className = "cloak-zone-label";
+        label.textContent = "Участок " + (zone + 1);
+        button.appendChild(label);
+        button.addEventListener("click", () => {
+            if (isGamePaused || currentScene?.type !== "cloak_search") return;
+            cloakSelectedZone = zone;
+            zones.querySelectorAll("button").forEach((item, index) => {
+                item.classList.toggle("selected", index === zone);
+                item.setAttribute("aria-pressed", String(index === zone));
+            });
+            feedback.textContent = "Участок выбран. Ответ можно изменить.";
+            socket.emit("cloak:answer", { zone });
+        });
+        zones.appendChild(button);
+    }
+}
+socket.on("cloak:answer_result", ({ zone }) => {
+    if (currentScene?.type === "cloak_search") cloakSelectedZone = zone;
+});
+
 let garlandSelectedAnswer = null;
 function renderGarlandFire(scene) {
     stopSnitchFlight();
@@ -2569,7 +2620,9 @@ socket.on(
         currentScene = scene;
         stopSnitchFlight();
         document.getElementById("garlandFire")?.classList.add("hidden");
+        document.getElementById("cloakSearch")?.classList.add("hidden");
         if (scene.type === "garland_fire") garlandSelectedAnswer = null;
+        if (scene.type === "cloak_search") cloakSelectedZone = null;
 
         // Запускаем общий таймер сцены
         if (timer && timer.endsAt) {
@@ -2600,6 +2653,11 @@ socket.on(
         // Показываем игровой экран
         gameScreen.classList.remove("hidden");
 
+        if (scene.type === "cloak_search") {
+            hideSceneTransition();
+            renderCloakSearch(scene);
+            return;
+        }
         if (scene.type === "garland_fire") {
             hideSceneTransition();
             renderGarlandFire(scene);
