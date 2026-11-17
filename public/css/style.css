@@ -3266,3 +3266,16 @@ button:disabled {
   .cloak-zones { gap: 7px; }
   .cloak-zone { height: clamp(95px, 21vh, 165px); }
 }
+
+/* Potion recipe challenge */
+.potion-recipe { position:fixed; inset:0; z-index:35; display:flex; align-items:center; justify-content:center; padding:22px; background:linear-gradient(145deg,rgba(2,24,18,.8),rgba(3,38,27,.72)),url("/assets/backgrounds/NewYearBG/hallway.png") center/cover; color:#f4f9ed; }
+.potion-recipe.hidden { display:none!important; }
+.potion-card { width:min(860px,95vw); max-height:90vh; overflow:auto; padding:clamp(20px,4vw,42px); border:1px solid #8fd4a1; border-radius:22px; background:rgba(5,40,30,.92); text-align:center; box-shadow:0 22px 80px rgba(0,0,0,.4); }
+.potion-symbol { font-size:46px; color:#b9e7b8; }
+.potion-card h1 { font-size:clamp(24px,4vw,38px); margin:8px 0 14px; }
+.potion-card p { font-size:clamp(15px,2vw,19px); }
+.potion-ingredients { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:24px 0; }
+.potion-ingredient { min-height:76px; border:1px solid #6ca78a; border-radius:12px; background:rgba(12,72,49,.85); color:#f6fff5; font:inherit; font-weight:600; padding:12px; cursor:pointer; }
+.potion-ingredient:hover:not(:disabled),.potion-ingredient.selected { border-color:#c7f9b7; background:#18784d; box-shadow:0 0 0 2px rgba(182,244,180,.2); }
+.potion-ingredient:disabled { cursor:default; opacity:.9; }
+@media(max-width:650px) { .potion-ingredients { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; } .potion-ingredient { min-height:64px; padding:8px; font-size:13px; } .potion-card { padding:18px; } }
