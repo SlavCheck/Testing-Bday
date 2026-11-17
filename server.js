@@ -17,6 +17,8 @@ const garlandFire = require("./game/scenes/garland-fire");
 const invisibilityCloak = require("./game/scenes/invisibility-cloak");
 const potionRecipe = require("./game/scenes/potion-recipe");
 const potionIntro = require("./game/scenes/potion-intro");
+const potionNegativeIntro = require("./game/scenes/potion-negative-intro");
+const potionNegativeTest = require("./game/scenes/potion-negative-test");
 const { assignNextHouse } = require("./game/services/houses");
 
 const PORT = process.env.PORT || 3000;
@@ -40,6 +42,10 @@ const games = new Map();
 // --------------------------------------------------
 // HELPERS
 // --------------------------------------------------
+function publicNegativePotionScene() {
+    const { correctIds, ...safeScene } = potionNegativeTest;
+    return safeScene;
+}
 function publicPotionScene() {
     const { correctIds, ...safeScene } = potionRecipe;
     return safeScene;
@@ -548,8 +554,10 @@ function sendPlayerState(socket, game, player) {
     
         status: game.status,
     
-        scene: game.currentScene?.id === "potion-recipe" ? publicPotionScene() : game.currentScene,
+        scene: game.currentScene?.id === "potion-recipe" ? publicPotionScene() :
+            game.currentScene?.id === "potion-negative-test" ? publicNegativePotionScene() : game.currentScene,
         potionAnswer: player.potionAnswer || [],
+        negativePotionAnswer: player.negativePotionAnswer || [],
     
         sceneState: player.sceneState,
     
@@ -820,6 +828,20 @@ function moveToNextScene(game) {
         for (const player of game.players.values()) player.potionAnswer = [];
         startSceneTimer(game, potionRecipe.duration);
         io.to(`game_${game.id}`).emit("game:started", { scene: publicPotionScene(), timer: game.sceneTimer });
+        return;
+    }
+
+    if (game.gameType !== "classic" && game.currentScene?.id === "potion-recipe") {
+        game.currentScene = potionNegativeIntro;
+        startSceneTimer(game, potionNegativeIntro.duration);
+        io.to(`game_${game.id}`).emit("game:started", { scene: potionNegativeIntro, timer: game.sceneTimer });
+        return;
+    }
+    if (game.gameType !== "classic" && game.currentScene?.id === "potion-negative-intro") {
+        game.currentScene = potionNegativeTest;
+        for (const player of game.players.values()) player.negativePotionAnswer = [];
+        startSceneTimer(game, potionNegativeTest.duration);
+        io.to(`game_${game.id}`).emit("game:started", { scene: publicNegativePotionScene(), timer: game.sceneTimer });
         return;
     }
 
@@ -2260,6 +2282,23 @@ socket.on(
     });
 
     // The recipe's correct IDs are never sent to players during the selection phase.
+    socket.on("potion-negative:answer", ({ optionIds } = {}) => {
+        if (!socket.gameId || !Array.isArray(optionIds) || optionIds.length > 2) return;
+        const game = games.get(socket.gameId);
+        if (!game || game.status !== "playing" || game.currentScene?.id !== "potion-negative-test" ||
+            !game.sceneTimer || Date.now() >= game.sceneTimer.endsAt) return;
+        const validIds = new Set(potionNegativeTest.options.map(option => option.id));
+        if (new Set(optionIds).size !== optionIds.length || optionIds.some(id => !validIds.has(id))) return;
+        const player = [...game.players.values()].find(p => p.socketId === socket.id);
+        if (!player) return;
+        const correct = ids => ids.length === 2 && potionNegativeTest.correctIds.every(id => ids.includes(id));
+        const wasCorrect = correct(player.negativePotionAnswer || []);
+        const isCorrect = correct(optionIds);
+        if (wasCorrect !== isCorrect) player.score += isCorrect ? potionNegativeTest.points : -potionNegativeTest.points;
+        player.negativePotionAnswer = optionIds.slice();
+        socket.emit("potion-negative:answer_result", { optionIds: player.negativePotionAnswer });
+    });
+
     socket.on("potion:answer", ({ ingredientIds } = {}) => {
         if (!socket.gameId || !Array.isArray(ingredientIds) || ingredientIds.length > 6) return;
         const game = games.get(socket.gameId);
@@ -2305,13 +2344,18 @@ socket.on(
             "garland-fire": garlandFire,
             "invisibility-cloak": invisibilityCloak,
             "potion-recipe": potionRecipe,
-            "potion-intro": potionIntro
+            "potion-intro": potionIntro,
+            "potion-negative-intro": potionNegativeIntro,
+            "potion-negative-test": potionNegativeTest
         };
         if (!Object.prototype.hasOwnProperty.call(allowed, sceneId)) return;
         if (game.sceneTimerTimeout) clearTimeout(game.sceneTimerTimeout);
         game.sceneTimerTimeout = null;
         game.sceneTimer = null;
         game.currentScene = sceneId === "snitch-flight" ? { ...snitchFlight } : allowed[sceneId];
+        if (sceneId === "potion-negative-test") {
+            for (const player of game.players.values()) player.negativePotionAnswer = [];
+        }
         if (sceneId === "potion-recipe") {
             for (const player of game.players.values()) player.potionAnswer = [];
         }
@@ -2329,7 +2373,8 @@ socket.on(
         }
         startSceneTimer(game, game.currentScene.duration);
         io.to(`game_${game.id}`).emit("game:started", {
-            scene: sceneId === "potion-recipe" ? publicPotionScene() : game.currentScene,
+            scene: sceneId === "potion-recipe" ? publicPotionScene() :
+                sceneId === "potion-negative-test" ? publicNegativePotionScene() : game.currentScene,
             timer: game.sceneTimer
         });
         socket.emit("admin:jump_scene_result", { sceneId });
