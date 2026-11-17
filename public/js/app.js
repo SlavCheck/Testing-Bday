@@ -2373,7 +2373,7 @@ function renderPotionRecipe(scene, timer, restoredAnswer) {
         const memorizing = now < selectionStart;
         const expired = now >= end;
         instructions.textContent = memorizing
-            ? "Запомни шесть ингредиентов! Рецепт исчезнет через " + Math.ceil((selectionStart - now) / 1000) + " сек."
+            ? "Запомни каждый ингредиент! Рецепт исчезнет через " + Math.ceil((selectionStart - now) / 1000) + " сек."
             : "Выбери ровно 6 ингредиентов по памяти. Можно менять выбор до окончания времени.";
         parchment.classList.toggle("hidden", !memorizing);
         ingredients.classList.toggle("hidden", memorizing);
