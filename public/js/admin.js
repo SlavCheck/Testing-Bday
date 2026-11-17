@@ -475,6 +475,14 @@ document.getElementById("devSceneJump")?.addEventListener("click", () => {
     const sceneId = document.getElementById("devSceneSelect").value;
     socket.emit("admin:jump_scene", { sceneId });
 });
+for (const [buttonId, sceneId] of [["devPotionIntro", "potion-intro"], ["devPotionRecipe", "potion-recipe"]]) {
+    document.getElementById(buttonId)?.addEventListener("click", () => {
+        document.getElementById("devSceneSelect").value = sceneId;
+        const status = document.getElementById("devSceneStatus");
+        if (status) status.textContent = "Переключаем сцену...";
+        socket.emit("admin:jump_scene", { sceneId });
+    });
+}
 socket.on("admin:jump_scene_result", ({ sceneId }) => {
     const status = document.getElementById("devSceneStatus");
     if (status) status.textContent = "Сцена переключена: " + sceneId;
