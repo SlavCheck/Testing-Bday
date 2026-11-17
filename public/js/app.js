@@ -2325,6 +2325,10 @@ function renderSnitchFlight(scene, timer) {
     document.getElementById("snitchFlightStatus").textContent = "";
     const snitch = document.getElementById("flyingSnitch");
     const arena = document.getElementById("snitchFlightArena");
+    const snitchImage = document.getElementById("flyingSnitchImage");
+    const redSnitchImage = "/assets/items/NewYearItems/Snitch_red.png";
+    const greenSnitchImage = "/assets/items/NewYearItems/Snitch_green.png";
+    snitchImage.src = redSnitchImage;
     flightTimerEndsAt = timer?.endsAt || Date.now() + scene.duration * 1000;
     flightClockOffset = timer?.serverNow ? timer.serverNow - Date.now() : 0;
     snitch.onclick = () => {
@@ -2336,6 +2340,8 @@ function renderSnitchFlight(scene, timer) {
         const elapsed = (scene.duration * 1000 - remaining) / 1000;
         const green = scene.greenWindows.some(t => elapsed >= t && elapsed < t + scene.greenDurationMs / 1000);
         snitch.classList.toggle("green", green);
+        const targetImage = green ? greenSnitchImage : redSnitchImage;
+        if (snitchImage.getAttribute("src") !== targetImage) snitchImage.src = targetImage;
         const w = Math.max(0, arena.clientWidth - snitch.offsetWidth);
         const h = Math.max(0, arena.clientHeight - snitch.offsetHeight);
         // Continuous movement with accelerating and decelerating velocity.
