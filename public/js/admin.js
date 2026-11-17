@@ -69,6 +69,19 @@ const houseCounts = Object.fromEntries(
     Object.keys(HOUSE_NAMES).map(id => [id, document.getElementById(id + "Count")])
 );
 
+const CLASSIC_TEAM_NAMES = {
+    strategist: "📋 Стратеги",
+    joker: "🎭 Шутники",
+    critic: "🔎 Критики"
+};
+const classicCounts = Object.fromEntries(Object.keys(CLASSIC_TEAM_NAMES).map(id => [id, document.getElementById(id + "Count")]));
+let currentAdminGameType = "harry-potter";
+function showGameTeamCards(gameType) {
+    currentAdminGameType = gameType === "classic" ? "classic" : "harry-potter";
+    document.getElementById("houseTeamCards").classList.toggle("hidden", currentAdminGameType === "classic");
+    document.getElementById("classicTeamCards").classList.toggle("hidden", currentAdminGameType !== "classic");
+}
+
 const playerList =
     document.getElementById(
         "playerList"
@@ -83,6 +96,7 @@ const adminStatus =
 const ADMIN_SESSION_KEY = "testingBday_adminSession";
 function showAdminGame(gameId, status = "lobby", gameType = "harry-potter") {
     adminGameTypeLabel.textContent = GAME_MODE_LABELS[gameType] || GAME_MODE_LABELS["harry-potter"];
+    showGameTeamCards(gameType);
     gameCodeElement.textContent = gameId;
     lobbyLink.value = `${window.location.origin}/?game=${gameId}`;
     createGameSection.classList.add("hidden");
@@ -148,12 +162,15 @@ socket.on("admin:game_created", ({ gameId, gameType, adminToken }) => {
 // LOBBY UPDATE
 // ==================================================
 
-socket.on("lobby:update", ({ players }) => {
+socket.on("lobby:update", ({ players, gameType }) => {
+    if (gameType) showGameTeamCards(gameType);
     playerCountElement.textContent = players.length;
     const counts = Object.fromEntries(Object.keys(HOUSE_NAMES).map(id => [id, 0]));
+    const teamCounts = Object.fromEntries(Object.keys(CLASSIC_TEAM_NAMES).map(id => [id, 0]));
     playerList.replaceChildren();
     for (const player of players) {
         if (player.house in counts) counts[player.house]++;
+        if (player.team in teamCounts) teamCounts[player.team]++;
         const row = document.createElement("div");
         row.className = "player-row";
         const name = document.createElement("span");
@@ -161,7 +178,9 @@ socket.on("lobby:update", ({ players }) => {
         name.textContent = player.nickname;
         const house = document.createElement("span");
         house.className = "player-team";
-        house.textContent = HOUSE_NAMES[player.house] || "Не распределён";
+        house.textContent = currentAdminGameType === "classic"
+            ? (CLASSIC_TEAM_NAMES[player.team] || "Не распределён")
+            : (HOUSE_NAMES[player.house] || "Не распределён");
         const kick = document.createElement("button");
         kick.className = "kick-button";
         kick.textContent = "ВЫГНАТЬ";
