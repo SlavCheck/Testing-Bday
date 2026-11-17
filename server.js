@@ -547,7 +547,8 @@ function sendPlayerState(socket, game, player) {
     
         status: game.status,
     
-        scene: game.currentScene,
+        scene: game.currentScene?.id === "potion-recipe" ? publicPotionScene() : game.currentScene,
+        potionAnswer: player.potionAnswer || [],
     
         sceneState: player.sceneState,
     
