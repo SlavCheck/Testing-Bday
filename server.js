@@ -2196,6 +2196,35 @@ socket.on(
         socket.emit("snitch:flight_result", { delta, score: player.score });
     });
 
+    // Developer-only scene jump. Requires the authenticated admin socket.
+    socket.on("admin:jump_scene", ({ sceneId } = {}) => {
+        if (!socket.isAdmin || !socket.gameId) return;
+        const game = games.get(socket.gameId);
+        if (!game || game.status !== "playing") return;
+        const allowed = {
+            "snitch-announcement": snitchAnnouncement,
+            "snitch-theft": snitchScene,
+            "snitch-flight": snitchFlight
+        };
+        if (!Object.prototype.hasOwnProperty.call(allowed, sceneId)) return;
+        if (game.sceneTimerTimeout) clearTimeout(game.sceneTimerTimeout);
+        game.sceneTimerTimeout = null;
+        game.sceneTimer = null;
+        game.currentScene = allowed[sceneId];
+        if (sceneId === "snitch-flight") {
+            for (const player of game.players.values()) {
+                player.flightCaughtWindows = new Set();
+                player.lastFlightClickAt = 0;
+            }
+        }
+        startSceneTimer(game, game.currentScene.duration);
+        io.to(`game_${game.id}`).emit("game:started", {
+            scene: game.currentScene,
+            timer: game.sceneTimer
+        });
+        socket.emit("admin:jump_scene_result", { sceneId });
+    });
+
     // ==================================================
     // ADMIN: PAUSE / RESUME GAME
     // ==================================================
