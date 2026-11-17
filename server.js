@@ -14,6 +14,7 @@ const snitchScene = require("./game/scenes/snitch-theft");
 const snitchAnnouncement = require("./game/scenes/snitch-announcement");
 const snitchFlight = require("./game/scenes/snitch-flight");
 const garlandFire = require("./game/scenes/garland-fire");
+const invisibilityCloak = require("./game/scenes/invisibility-cloak");
 const { assignNextHouse } = require("./game/services/houses");
 
 const PORT = process.env.PORT || 3000;
@@ -788,6 +789,14 @@ function moveToNextScene(game) {
         for (const player of game.players.values()) player.garlandAnswer = null;
         startSceneTimer(game, garlandFire.duration);
         io.to(`game_${game.id}`).emit("game:started", { scene: garlandFire, timer: game.sceneTimer });
+        return;
+    }
+
+    if (game.currentScene?.id === "garland-fire") {
+        game.currentScene = invisibilityCloak;
+        for (const player of game.players.values()) player.cloakAnswer = null;
+        startSceneTimer(game, invisibilityCloak.duration);
+        io.to(`game_${game.id}`).emit("game:started", { scene: invisibilityCloak, timer: game.sceneTimer });
         return;
     }
 
@@ -2220,6 +2229,20 @@ socket.on(
         socket.emit("garland:answer_result", { answerId });
     });
 
+    socket.on("cloak:answer", ({ zone } = {}) => {
+        if (!socket.gameId || !Number.isInteger(zone) || zone < 0 || zone > 3) return;
+        const game = games.get(socket.gameId);
+        if (!game || game.status !== "playing" || game.currentScene?.id !== "invisibility-cloak" ||
+            !game.sceneTimer || Date.now() >= game.sceneTimer.endsAt) return;
+        const player = [...game.players.values()].find(p => p.socketId === socket.id);
+        if (!player) return;
+        const previousCorrect = player.cloakAnswer === invisibilityCloak.correctZone;
+        const nextCorrect = zone === invisibilityCloak.correctZone;
+        if (previousCorrect !== nextCorrect) player.score += nextCorrect ? invisibilityCloak.points : -invisibilityCloak.points;
+        player.cloakAnswer = zone;
+        socket.emit("cloak:answer_result", { zone });
+    });
+
     // Developer-only scene jump. Requires the authenticated admin socket.
     socket.on("admin:jump_scene", ({ sceneId } = {}) => {
         if (!socket.isAdmin || !socket.gameId) return;
@@ -2229,13 +2252,17 @@ socket.on(
             "snitch-announcement": snitchAnnouncement,
             "snitch-theft": snitchScene,
             "snitch-flight": snitchFlight,
-            "garland-fire": garlandFire
+            "garland-fire": garlandFire,
+            "invisibility-cloak": invisibilityCloak
         };
         if (!Object.prototype.hasOwnProperty.call(allowed, sceneId)) return;
         if (game.sceneTimerTimeout) clearTimeout(game.sceneTimerTimeout);
         game.sceneTimerTimeout = null;
         game.sceneTimer = null;
         game.currentScene = sceneId === "snitch-flight" ? { ...snitchFlight } : allowed[sceneId];
+        if (sceneId === "invisibility-cloak") {
+            for (const player of game.players.values()) player.cloakAnswer = null;
+        }
         if (sceneId === "garland-fire") {
             for (const player of game.players.values()) player.garlandAnswer = null;
         }
