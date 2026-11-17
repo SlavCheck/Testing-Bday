@@ -2867,3 +2867,23 @@ button:disabled {
   #sceneTimer { min-width: 66px; height: 36px; padding: 6px 8px; font-size: 14px; }
   #voiceToggle { min-width: 0; height: 36px; padding: 6px 9px; font-size: 12px; }
 }
+
+
+/* Announcement is its own timed stage: only the dialogue panel is visible. */
+.snitch-mystery.snitch-announcement {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.snitch-announcement .snitch-dialogue {
+  flex: 0 0 30%;
+  min-height: 210px;
+  max-height: 35%;
+}
+@media (max-width: 767px) {
+  .snitch-announcement .snitch-dialogue {
+    flex-basis: 37%;
+    min-height: 190px;
+    max-height: 45%;
+  }
+}
