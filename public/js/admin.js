@@ -455,14 +455,6 @@ copyLobbyLinkButton.addEventListener(
 
     }
 );
-/* Hidden developer shortcut: Ctrl+Alt+D on the admin page. */
-document.addEventListener("keydown", event => {
-    if (event.ctrlKey && event.altKey && event.code === "KeyD") {
-        event.preventDefault();
-        const panel = document.getElementById("devScenePanel");
-        if (panel) panel.hidden = !panel.hidden;
-    }
-});
 document.getElementById("devSceneJump")?.addEventListener("click", () => {
     const sceneId = document.getElementById("devSceneSelect").value;
     socket.emit("admin:jump_scene", { sceneId });
