@@ -2589,3 +2589,11 @@ button:disabled {
         linear-gradient(rgba(9, 12, 27, .78), rgba(12, 11, 25, .92)),
         url("/assets/backgrounds/NewYearBG/room.png") center / cover fixed;
 }
+
+/* Testimony navigation never changes the server scene. */
+.snitch-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; }
+.snitch-nav button { background: #e5bd65; color: #221829; border: 0; border-radius: 10px; padding: 12px 16px; font-weight: 800; cursor: pointer; }
+.snitch-nav button:disabled { opacity: .35; cursor: default; }
+#snitchProgress { color: #f4cb65; white-space: nowrap; }
+#snitchVoting { max-width: 950px; margin: 0 auto 40px; }
+#snitchVoting.hidden { display: none; }
