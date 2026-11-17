@@ -2736,3 +2736,29 @@ button:disabled {
 .snitch-suspect { border-color: #43896b; background: rgba(15,39,35,.9); }
 .snitch-suspect:hover:not(:disabled) { border-color: #7fdbac; }
 .snitch-suspect.selected { border-color: #76e2a5; box-shadow: 0 0 0 2px #268c60; }
+
+
+/* Only the bottom dialogue panel has a decorative frame. */
+.snitch-mystery,
+#snitchVoting,
+.snitch-suspect,
+.snitch-portrait,
+.snitch-dialogue-content {
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+#snitchVoting { background: transparent; border-radius: 0; }
+.snitch-suspect {
+  background: rgba(13, 36, 31, .78);
+  border-radius: 12px;
+}
+.snitch-suspect.selected {
+  box-shadow: none;
+  background: rgba(35, 111, 77, .85);
+}
+.snitch-portrait { border-radius: 0; background: transparent; padding: 0; }
+.snitch-dialogue {
+  border: 2px solid #398d65;
+  box-shadow: 0 0 0 3px rgba(10,41,30,.8), 0 16px 45px #0009, inset 0 0 26px #39a77920;
+}
