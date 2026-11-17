@@ -1601,6 +1601,7 @@ socket.on(
         house,
         gameType = "harry-potter",
         snitchAnswer,
+        potionAnswer,
         score,
         status,
         scene,
@@ -1762,6 +1763,10 @@ socket.on(
          * 6️⃣ Сохраняем сцену в глобальную переменную
          * ------------------------------------------------- */
         currentScene = scene;
+        if (scene.type === "potion_recipe") {
+            renderPotionRecipe(scene, timer, potionAnswer);
+            return;
+        }
         if (scene.type === "cloak_search") {
             renderCloakSearch(scene);
             return;
@@ -2336,6 +2341,68 @@ function stopSnitchFlight() {
     document.querySelectorAll(".snitch-score-popup").forEach(node => node.remove());
     document.getElementById("snitchFlight")?.classList.add("hidden");
 }
+let potionSelectedIds = [];
+let potionPhaseInterval = null;
+function renderPotionRecipe(scene, timer, restoredAnswer) {
+    if (potionPhaseInterval) clearInterval(potionPhaseInterval);
+    potionPhaseInterval = null;
+    if (Array.isArray(restoredAnswer)) potionSelectedIds = restoredAnswer.slice();
+    stopSnitchFlight();
+    for (const id of ["snitchMystery", "garlandFire", "cloakSearch"]) document.getElementById(id)?.classList.add("hidden");
+    dialoguePanel?.classList.add("hidden");
+    bugSearch?.classList.add("hidden");
+    charactersLayer?.replaceChildren();
+    const section = document.getElementById("potionRecipe");
+    section.classList.remove("hidden");
+    document.getElementById("potionTitle").textContent = scene.title;
+    const instructions = document.getElementById("potionInstructions");
+    const ingredients = document.getElementById("potionIngredients");
+    const feedback = document.getElementById("potionFeedback");
+    const end = timer?.endsAt || Date.now() + scene.duration * 1000;
+    const selectionStart = end - (scene.duration - scene.memorizeSeconds) * 1000;
+    const valid = new Set(scene.ingredients.map(item => item.id));
+    const correct = new Set(["boomslang", "turquoise", "unicorn_hair", "holly_wand", "phoenix_tear", "mandrake"]);
+    // Only show the recipe in the memorization phase; answers are validated server-side.
+    function refresh() {
+        if (currentScene?.type !== "potion_recipe") {
+            clearInterval(potionPhaseInterval);
+            potionPhaseInterval = null;
+            return;
+        }
+        const now = Date.now();
+        const memorizing = now < selectionStart;
+        const expired = now >= end;
+        instructions.textContent = memorizing
+            ? "Запомни шесть ингредиентов! Рецепт исчезнет через " + Math.ceil((selectionStart - now) / 1000) + " сек."
+            : "Выбери ровно 6 ингредиентов по памяти. Можно менять выбор до окончания времени.";
+        ingredients.replaceChildren();
+        const shown = memorizing ? scene.ingredients.filter(item => correct.has(item.id)) : scene.ingredients;
+        for (const item of shown) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "potion-ingredient";
+            button.textContent = (potionSelectedIds.includes(item.id) ? "✓ " : "") + item.label;
+            button.classList.toggle("selected", potionSelectedIds.includes(item.id));
+            button.disabled = memorizing || expired || isGamePaused;
+            button.addEventListener("click", () => {
+                if (Date.now() < selectionStart || Date.now() >= end || isGamePaused) return;
+                if (potionSelectedIds.includes(item.id)) potionSelectedIds = potionSelectedIds.filter(id => id !== item.id);
+                else if (potionSelectedIds.length < 6) potionSelectedIds.push(item.id);
+                socket.emit("potion:answer", { ingredientIds: potionSelectedIds });
+                refresh();
+            });
+            ingredients.appendChild(button);
+        }
+        feedback.textContent = memorizing ? "Изучи рецепт: эти ингредиенты нужно будет вспомнить." :
+            expired ? "Время вышло." : "Выбрано: " + potionSelectedIds.length + " из 6";
+    }
+    refresh();
+    potionPhaseInterval = setInterval(refresh, 1000);
+}
+socket.on("potion:answer_result", ({ ingredientIds }) => {
+    if (currentScene?.type === "potion_recipe" && Array.isArray(ingredientIds)) potionSelectedIds = ingredientIds.slice();
+});
+
 let cloakSelectedZone = null;
 function renderCloakSearch(scene) {
     stopSnitchFlight();
@@ -2631,6 +2698,9 @@ socket.on(
         stopSnitchFlight();
         document.getElementById("garlandFire")?.classList.add("hidden");
         document.getElementById("cloakSearch")?.classList.add("hidden");
+        document.getElementById("potionRecipe")?.classList.add("hidden");
+        if (potionPhaseInterval) { clearInterval(potionPhaseInterval); potionPhaseInterval = null; }
+        if (scene.type === "potion_recipe") potionSelectedIds = [];
         if (scene.type === "garland_fire") garlandSelectedAnswer = null;
         if (scene.type === "cloak_search") cloakSelectedZone = null;
 
@@ -2663,6 +2733,11 @@ socket.on(
         // Показываем игровой экран
         gameScreen.classList.remove("hidden");
 
+        if (scene.type === "potion_recipe") {
+            hideSceneTransition();
+            renderPotionRecipe(scene, timer);
+            return;
+        }
         if (scene.type === "cloak_search") {
             hideSceneTransition();
             renderCloakSearch(scene);
