@@ -3145,3 +3145,35 @@ button:disabled {
     height: clamp(105px, 27vw, 150px);
   }
 }
+
+
+/* Floating score at the click location, never a persistent status line. */
+.snitch-score-popup {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  font-size: clamp(30px, 4vw, 48px);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow: 0 2px 8px rgba(0,0,0,.8);
+  animation: snitch-score-float 1.05s ease-out forwards;
+}
+.snitch-score-popup.positive { color: #5cff94; }
+.snitch-score-popup.negative { color: #ff6666; }
+@keyframes snitch-score-float {
+  0% { opacity: 0; transform: translate(-50%, -20%) scale(.65); }
+  20% { opacity: 1; transform: translate(-50%, -65%) scale(1.12); }
+  75% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -160%) scale(.95); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .snitch-score-popup { animation: snitch-score-fade 1.05s ease-out forwards; }
+  @keyframes snitch-score-fade {
+    0% { opacity: 0; }
+    20% { opacity: 1; }
+    75% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+}
