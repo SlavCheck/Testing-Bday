@@ -2399,7 +2399,7 @@ socket.on("tree:submit_result", ({correct}) => {
     feedback.textContent = correct ? "✨ Верно! Заклинание сработало!" : "Порядок или слова неверны. Попробуй ещё!";
 });
 socket.on("tree:house_solved", ({house}) => {
-    if (currentScene?.type === "tree_spell" && treeCurrentRole && house === (window.playerHouse || window.currentHouse || playerHouse)) {
+    if (currentScene?.type === "tree_spell" && treeCurrentRole && house === treeCurrentRole.house) {
         if (treeCurrentRole) treeCurrentRole.solved = true;
         renderTreeSpell();
     }
