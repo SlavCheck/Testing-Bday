@@ -1603,6 +1603,7 @@ socket.on(
         snitchAnswer,
         potionAnswer,
         negativePotionAnswer,
+        treeRole,
         score,
         status,
         scene,
@@ -1764,6 +1765,11 @@ socket.on(
          * 6️⃣ Сохраняем сцену в глобальную переменную
          * ------------------------------------------------- */
         currentScene = scene;
+        if (scene.type === "tree_spell") {
+            treeCurrentRole = treeRole;
+            renderTreeSpell(treeRole);
+            return;
+        }
         if (scene.type === "potion_negative_test") {
             negativePotionOrder = [];
             renderNegativePotionTest(scene, timer, negativePotionAnswer);
@@ -2347,6 +2353,63 @@ function stopSnitchFlight() {
     document.querySelectorAll(".snitch-score-popup").forEach(node => node.remove());
     document.getElementById("snitchFlight")?.classList.add("hidden");
 }
+let treeCurrentRole = null;
+function renderTreeSpell(role) {
+    stopSnitchFlight();
+    for (const id of ["snitchMystery", "garlandFire", "cloakSearch", "potionRecipe", "potionNegativeTest"])
+        document.getElementById(id)?.classList.add("hidden");
+    dialoguePanel?.classList.add("hidden");
+    bugSearch?.classList.add("hidden");
+    charactersLayer?.replaceChildren();
+    document.getElementById("treeSpell")?.classList.remove("hidden");
+    if (role) treeCurrentRole = role;
+    const current = treeCurrentRole;
+    const heading = document.getElementById("treeRoleTitle");
+    const info = document.getElementById("treeRoleInfo");
+    const parts = document.getElementById("treeWordParts");
+    parts.replaceChildren();
+    if (!current) {
+        heading.textContent = "Распределяем роли...";
+        info.textContent = "";
+        return;
+    }
+    heading.textContent = current.captain ? "🎩 Ты капитан факультета!" : "🪄 Твои части заклинания";
+    info.textContent = current.captain
+        ? "Собери слова от участников в правильном порядке и введи всю фразу."
+        : "Передай капитану " + current.captainName + " слово и число. Они помогут восстановить порядок.";
+    for (const part of current.parts) {
+        const card = document.createElement("div");
+        card.className = "tree-word-card";
+        const word = document.createElement("strong");
+        word.textContent = part.word;
+        const number = document.createElement("span");
+        number.textContent = "Число: " + part.number;
+        card.append(word, number);
+        parts.appendChild(card);
+    }
+    document.getElementById("treeSpellForm").classList.toggle("hidden", !current.captain || current.solved);
+    document.getElementById("treeSpellFeedback").textContent = current.solved ? "✨ Заклинание собрано! Факультет справился!" : "";
+}
+socket.on("tree:role", role => {
+    treeCurrentRole = role;
+    if (currentScene?.type === "tree_spell") renderTreeSpell(role);
+});
+socket.on("tree:submit_result", ({correct}) => {
+    const feedback = document.getElementById("treeSpellFeedback");
+    feedback.textContent = correct ? "✨ Верно! Заклинание сработало!" : "Порядок или слова неверны. Попробуй ещё!";
+});
+socket.on("tree:house_solved", ({house}) => {
+    if (currentScene?.type === "tree_spell" && treeCurrentRole && house === (window.playerHouse || window.currentHouse || playerHouse)) {
+        if (treeCurrentRole) treeCurrentRole.solved = true;
+        renderTreeSpell();
+    }
+});
+document.getElementById("treeSpellForm")?.addEventListener("submit", event => {
+    event.preventDefault();
+    if (!treeCurrentRole?.captain || treeCurrentRole.solved || isGamePaused) return;
+    socket.emit("tree:submit", {phrase:document.getElementById("treeSpellInput").value});
+});
+
 let negativePotionSelectedIds = [];
 let negativePotionOrder = [];
 function renderNegativePotionTest(scene, timer, restoredAnswer) {
@@ -2771,6 +2834,8 @@ socket.on(
         document.getElementById("cloakSearch")?.classList.add("hidden");
         document.getElementById("potionRecipe")?.classList.add("hidden");
         document.getElementById("potionNegativeTest")?.classList.add("hidden");
+        document.getElementById("treeSpell")?.classList.add("hidden");
+        if (scene.type === "tree_spell") { treeCurrentRole = null; document.getElementById("treeSpellInput").value = ""; }
         if (scene.type === "potion_negative_test") { negativePotionSelectedIds = []; negativePotionOrder = []; }
         if (potionPhaseInterval) { clearInterval(potionPhaseInterval); potionPhaseInterval = null; }
         if (scene.type === "potion_recipe") potionSelectedIds = [];
@@ -2806,6 +2871,11 @@ socket.on(
         // Показываем игровой экран
         gameScreen.classList.remove("hidden");
 
+        if (scene.type === "tree_spell") {
+            hideSceneTransition();
+            renderTreeSpell();
+            return;
+        }
         if (scene.type === "potion_negative_test") {
             hideSceneTransition();
             renderNegativePotionTest(scene, timer);
