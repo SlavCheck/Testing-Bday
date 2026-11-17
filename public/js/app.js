@@ -2323,34 +2323,52 @@ function renderSnitchFlight(scene, timer) {
     charactersLayer?.replaceChildren();
     document.getElementById("snitchFlight").classList.remove("hidden");
     document.getElementById("snitchFlightStatus").textContent = "";
-    const snitch = document.getElementById("flyingSnitch");
     const arena = document.getElementById("snitchFlightArena");
-    const snitchImage = document.getElementById("flyingSnitchImage");
-    const redSnitchImage = "/assets/items/NewYearItems/Snitch_red.png";
-    const greenSnitchImage = "/assets/items/NewYearItems/Snitch_green.png";
-    snitchImage.src = redSnitchImage;
+    const redImage = "/assets/items/NewYearItems/Snitch_red.png";
+    const greenImage = "/assets/items/NewYearItems/Snitch_green.png";
+    arena.replaceChildren();
+    const cells = Array.from({ length: 25 }, (_, cell) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "snitch-grid-cell";
+        button.setAttribute("aria-label", "Снитч " + (cell + 1));
+        const img = document.createElement("img");
+        img.src = redImage;
+        img.alt = "";
+        img.draggable = false;
+        button.appendChild(img);
+        button.addEventListener("click", () => {
+            if (!isGamePaused && currentScene?.type === "snitch_flight") {
+                socket.emit("snitch:flight_click", { cell });
+            }
+        });
+        arena.appendChild(button);
+        return { button, img };
+    });
     flightTimerEndsAt = timer?.endsAt || Date.now() + scene.duration * 1000;
     flightClockOffset = timer?.serverNow ? timer.serverNow - Date.now() : 0;
-    snitch.onclick = () => {
-        if (!isGamePaused && currentScene?.type === "snitch_flight") socket.emit("snitch:flight_click");
-    };
-    const animate = () => {
+    let lastGreenCell = -2;
+    const update = () => {
         if (currentScene?.type !== "snitch_flight") return;
         const remaining = Math.max(0, flightTimerEndsAt - (Date.now() + flightClockOffset));
         const elapsed = (scene.duration * 1000 - remaining) / 1000;
-        const green = scene.greenWindows.some(t => elapsed >= t && elapsed < t + scene.greenDurationMs / 1000);
-        snitch.classList.toggle("green", green);
-        const targetImage = green ? greenSnitchImage : redSnitchImage;
-        if (snitchImage.getAttribute("src") !== targetImage) snitchImage.src = targetImage;
-        const w = Math.max(0, arena.clientWidth - snitch.offsetWidth);
-        const h = Math.max(0, arena.clientHeight - snitch.offsetHeight);
-        // Continuous movement with accelerating and decelerating velocity.
-        const x = (0.5 + 0.38 * Math.sin(elapsed * 0.85 + 0.35 * Math.sin(elapsed * 0.42))) * w;
-        const y = (0.5 + 0.32 * Math.sin(elapsed * 1.05 + 0.4 * Math.sin(elapsed * 0.32))) * h;
-        snitch.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-        if (remaining > 0) flightAnimationFrame = requestAnimationFrame(animate);
+        const index = scene.greenWindows.findIndex(t =>
+            elapsed >= t && elapsed < t + scene.greenDurationMs / 1000);
+        const greenCell = !isGamePaused && index >= 0 ? (scene.greenCells?.[index] ?? -1) : -1;
+        if (greenCell !== lastGreenCell) {
+            if (lastGreenCell >= 0) {
+                cells[lastGreenCell].img.src = redImage;
+                cells[lastGreenCell].button.classList.remove("green");
+            }
+            if (greenCell >= 0) {
+                cells[greenCell].img.src = greenImage;
+                cells[greenCell].button.classList.add("green");
+            }
+            lastGreenCell = greenCell;
+        }
+        if (remaining > 0) flightAnimationFrame = requestAnimationFrame(update);
     };
-    animate();
+    update();
 }
 socket.on("snitch:flight_result", ({ delta }) => {
     const status = document.getElementById("snitchFlightStatus");
