@@ -37,16 +37,6 @@ const games = new Map();
 // HELPERS
 // --------------------------------------------------
 
-function createSnitchGridScene() {
-    const greenCells = [];
-    for (let i = 0; i < snitchFlight.greenWindows.length; i++) {
-        let cell = Math.floor(Math.random() * 25);
-        if (i > 0 && cell === greenCells[i - 1]) cell = (cell + 1 + Math.floor(Math.random() * 24)) % 25;
-        greenCells.push(cell);
-    }
-    return { ...snitchFlight, greenCells };
-}
-
 function startSceneTimer(game, duration) {
 
     if (!duration) {
@@ -785,7 +775,7 @@ function moveToNextScene(game) {
     }
 
     if (game.currentScene?.id === "snitch-theft") {
-        game.currentScene = createSnitchGridScene();
+        game.currentScene = { ...snitchFlight };
         game.snitchFlightStartedAt = Date.now();
         startSceneTimer(game, snitchFlight.duration);
         io.to(`game_${game.id}`).emit("game:started", { scene: game.currentScene, timer: game.sceneTimer });
@@ -2180,7 +2170,7 @@ socket.on(
     });
 
     // Authoritative scoring: green lasts one second, five times per round.
-    socket.on("snitch:flight_click", ({ cell } = {}) => {
+    socket.on("snitch:flight_click", () => {
         if (!socket.gameId) return;
         const game = games.get(socket.gameId);
         if (!game || game.status !== "playing" || game.currentScene?.id !== "snitch-flight" ||
@@ -2188,14 +2178,13 @@ socket.on(
         const player = [...game.players.values()].find(p => p.socketId === socket.id);
         if (!player) return;
         const now = Date.now();
-        if (!Number.isInteger(cell) || cell < 0 || cell >= 25) return;
         if (now - (player.lastFlightClickAt || 0) < 250) return;
         player.lastFlightClickAt = now;
         const elapsed = snitchFlight.duration * 1000 - (game.sceneTimer.endsAt - now);
         const windowIndex = snitchFlight.greenWindows.findIndex(t =>
             elapsed >= t * 1000 && elapsed < t * 1000 + snitchFlight.greenDurationMs);
         let delta;
-        if (windowIndex >= 0 && cell === game.currentScene.greenCells[windowIndex]) {
+        if (windowIndex >= 0) {
             if (!player.flightCaughtWindows) player.flightCaughtWindows = new Set();
             if (player.flightCaughtWindows.has(windowIndex)) return;
             player.flightCaughtWindows.add(windowIndex);
@@ -2221,7 +2210,7 @@ socket.on(
         if (game.sceneTimerTimeout) clearTimeout(game.sceneTimerTimeout);
         game.sceneTimerTimeout = null;
         game.sceneTimer = null;
-        game.currentScene = sceneId === "snitch-flight" ? createSnitchGridScene() : allowed[sceneId];
+        game.currentScene = sceneId === "snitch-flight" ? { ...snitchFlight } : allowed[sceneId];
         if (sceneId === "snitch-flight") {
             for (const player of game.players.values()) {
                 player.flightCaughtWindows = new Set();
