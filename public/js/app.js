@@ -1602,6 +1602,7 @@ socket.on(
         gameType = "harry-potter",
         snitchAnswer,
         potionAnswer,
+        negativePotionAnswer,
         score,
         status,
         scene,
@@ -1763,6 +1764,11 @@ socket.on(
          * 6️⃣ Сохраняем сцену в глобальную переменную
          * ------------------------------------------------- */
         currentScene = scene;
+        if (scene.type === "potion_negative_test") {
+            negativePotionOrder = [];
+            renderNegativePotionTest(scene, negativePotionAnswer);
+            return;
+        }
         if (scene.type === "potion_recipe") {
             renderPotionRecipe(scene, timer, potionAnswer);
             return;
@@ -2341,6 +2347,63 @@ function stopSnitchFlight() {
     document.querySelectorAll(".snitch-score-popup").forEach(node => node.remove());
     document.getElementById("snitchFlight")?.classList.add("hidden");
 }
+let negativePotionSelectedIds = [];
+let negativePotionOrder = [];
+function renderNegativePotionTest(scene, restoredAnswer) {
+    if (Array.isArray(restoredAnswer)) negativePotionSelectedIds = restoredAnswer.slice();
+    stopSnitchFlight();
+    for (const id of ["snitchMystery", "garlandFire", "cloakSearch", "potionRecipe"]) {
+        document.getElementById(id)?.classList.add("hidden");
+    }
+    if (potionPhaseInterval) { clearInterval(potionPhaseInterval); potionPhaseInterval = null; }
+    dialoguePanel?.classList.add("hidden");
+    bugSearch?.classList.add("hidden");
+    charactersLayer?.replaceChildren();
+    document.getElementById("potionNegativeTest").classList.remove("hidden");
+    document.getElementById("potionNegativeTitle").textContent = scene.title;
+    document.getElementById("potionNegativeQuestion").textContent = scene.question;
+    const options = document.getElementById("potionNegativeOptions");
+    const feedback = document.getElementById("potionNegativeFeedback");
+    // Shuffle once, never after a click or timer update.
+    if (!negativePotionOrder.length) {
+        negativePotionOrder = scene.options.slice();
+        for (let i = negativePotionOrder.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [negativePotionOrder[i], negativePotionOrder[j]] = [negativePotionOrder[j], negativePotionOrder[i]];
+        }
+    }
+    function refresh() {
+        options.replaceChildren();
+        for (const option of negativePotionOrder) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "potion-negative-option";
+            button.textContent = (negativePotionSelectedIds.includes(option.id) ? "✓ " : "") + option.label;
+            button.classList.toggle("selected", negativePotionSelectedIds.includes(option.id));
+            button.setAttribute("aria-pressed", String(negativePotionSelectedIds.includes(option.id)));
+            button.disabled = isGamePaused;
+            button.addEventListener("click", () => {
+                if (currentScene?.type !== "potion_negative_test" || isGamePaused) return;
+                if (negativePotionSelectedIds.includes(option.id)) {
+                    negativePotionSelectedIds = negativePotionSelectedIds.filter(id => id !== option.id);
+                } else if (negativePotionSelectedIds.length < 2) {
+                    negativePotionSelectedIds.push(option.id);
+                }
+                socket.emit("potion-negative:answer", { optionIds: negativePotionSelectedIds });
+                refresh();
+            });
+            options.appendChild(button);
+        }
+        feedback.textContent = "Выбрано: " + negativePotionSelectedIds.length + " из 2. Ответ можно изменить до окончания времени.";
+    }
+    refresh();
+}
+socket.on("potion-negative:answer_result", ({ optionIds }) => {
+    if (currentScene?.type === "potion_negative_test" && Array.isArray(optionIds)) {
+        negativePotionSelectedIds = optionIds.slice();
+    }
+});
+
 let potionSelectedIds = [];
 let potionPhaseInterval = null;
 function renderPotionRecipe(scene, timer, restoredAnswer) {
@@ -2706,6 +2769,8 @@ socket.on(
         document.getElementById("garlandFire")?.classList.add("hidden");
         document.getElementById("cloakSearch")?.classList.add("hidden");
         document.getElementById("potionRecipe")?.classList.add("hidden");
+        document.getElementById("potionNegativeTest")?.classList.add("hidden");
+        if (scene.type === "potion_negative_test") { negativePotionSelectedIds = []; negativePotionOrder = []; }
         if (potionPhaseInterval) { clearInterval(potionPhaseInterval); potionPhaseInterval = null; }
         if (scene.type === "potion_recipe") potionSelectedIds = [];
         if (scene.type === "garland_fire") garlandSelectedAnswer = null;
@@ -2740,6 +2805,11 @@ socket.on(
         // Показываем игровой экран
         gameScreen.classList.remove("hidden");
 
+        if (scene.type === "potion_negative_test") {
+            hideSceneTransition();
+            renderNegativePotionTest(scene);
+            return;
+        }
         if (scene.type === "potion_recipe") {
             hideSceneTransition();
             renderPotionRecipe(scene, timer);
