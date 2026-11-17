@@ -2587,5 +2587,5 @@ button:disabled {
 .snitch-mystery {
     background:
         linear-gradient(rgba(9, 12, 27, .78), rgba(12, 11, 25, .92)),
-        url("/assets/newyear/room.png") center / cover fixed;
+        url("/assets/backgrounds/NewYearBG/room.png") center / cover fixed;
 }
