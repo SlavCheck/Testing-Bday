@@ -82,9 +82,9 @@ function startTreeSpell(game) {
 }
 function treeRole(game, player) {
     const team = game.treeTeams?.[player.house];
-    if (!team) return { captain: false, parts: [], solved: false };
+    if (!team) return { house: player.house, captain: false, parts: [], solved: false };
     const captain = [...game.players.values()].find(p => p.id === team.captainId);
-    return { captain: team.captainId === player.id, captainName: captain?.nickname || "",
+    return { house: player.house, captain: team.captainId === player.id, captainName: captain?.nickname || "",
         parts: team.assignments[player.id] || [], solved: team.solved };
 }
 function finishTreeGame(game) {
