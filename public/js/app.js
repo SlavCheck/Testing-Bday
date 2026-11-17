@@ -1752,6 +1752,10 @@ socket.on(
          * 6️⃣ Сохраняем сцену в глобальную переменную
          * ------------------------------------------------- */
         currentScene = scene;
+        if (scene.type === "snitch_flight") {
+            renderSnitchFlight(scene, timer);
+            return;
+        }
         if (scene.type === "snitch_mystery" || scene.type === "snitch_announcement") {
             snitchDialogueIndex = 0;
             renderSnitchMystery(scene, snitchAnswer);
@@ -2303,6 +2307,50 @@ function finishBugSearch() {
 
 // All players share the server's 90-second clock. Only testimony navigation is local.
 let savedSnitchAnswer = null;
+let flightAnimationFrame = null;
+let flightTimerEndsAt = 0;
+let flightClockOffset = 0;
+function stopSnitchFlight() {
+    if (flightAnimationFrame !== null) cancelAnimationFrame(flightAnimationFrame);
+    flightAnimationFrame = null;
+    document.getElementById("snitchFlight")?.classList.add("hidden");
+}
+function renderSnitchFlight(scene, timer) {
+    stopSnitchFlight();
+    document.getElementById("snitchMystery")?.classList.add("hidden");
+    dialoguePanel?.classList.add("hidden");
+    bugSearch?.classList.add("hidden");
+    charactersLayer?.replaceChildren();
+    document.getElementById("snitchFlight").classList.remove("hidden");
+    document.getElementById("snitchFlightStatus").textContent = "";
+    const snitch = document.getElementById("flyingSnitch");
+    const arena = document.getElementById("snitchFlightArena");
+    flightTimerEndsAt = timer?.endsAt || Date.now() + scene.duration * 1000;
+    flightClockOffset = timer?.serverNow ? timer.serverNow - Date.now() : 0;
+    snitch.onclick = () => {
+        if (!isGamePaused && currentScene?.type === "snitch_flight") socket.emit("snitch:flight_click");
+    };
+    const animate = () => {
+        if (currentScene?.type !== "snitch_flight") return;
+        const remaining = Math.max(0, flightTimerEndsAt - (Date.now() + flightClockOffset));
+        const elapsed = (scene.duration * 1000 - remaining) / 1000;
+        const green = scene.greenWindows.some(t => elapsed >= t && elapsed < t + scene.greenDurationMs / 1000);
+        snitch.classList.toggle("green", green);
+        const w = Math.max(0, arena.clientWidth - snitch.offsetWidth);
+        const h = Math.max(0, arena.clientHeight - snitch.offsetHeight);
+        // Continuous movement with accelerating and decelerating velocity.
+        const x = (0.5 + 0.46 * Math.sin(elapsed * 1.7 + 0.75 * Math.sin(elapsed * 0.85))) * w;
+        const y = (0.5 + 0.43 * Math.sin(elapsed * 2.3 + 1.2 * Math.sin(elapsed * 0.58))) * h;
+        snitch.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+        if (remaining > 0) flightAnimationFrame = requestAnimationFrame(animate);
+    };
+    animate();
+}
+socket.on("snitch:flight_result", ({ delta }) => {
+    const status = document.getElementById("snitchFlightStatus");
+    if (status) status.textContent = delta > 0 ? "+10 очков! Снитч пойман!" : "−5 очков! Снитч был красным.";
+});
+
 let snitchDialogueIndex = 0;
 let snitchTypingTimer = null;
 function showSnitchLine(scene) {
@@ -2426,6 +2474,7 @@ socket.on(
         }
 
         currentScene = scene;
+        stopSnitchFlight();
 
         // Запускаем общий таймер сцены
         if (timer && timer.endsAt) {
@@ -2456,6 +2505,11 @@ socket.on(
         // Показываем игровой экран
         gameScreen.classList.remove("hidden");
 
+        if (scene.type === "snitch_flight") {
+            hideSceneTransition();
+            renderSnitchFlight(scene, timer);
+            return;
+        }
         if (scene.type === "snitch_mystery" || scene.type === "snitch_announcement") {
             hideSceneTransition();
             snitchDialogueIndex = 0;
