@@ -2352,8 +2352,8 @@ function renderSnitchFlight(scene, timer) {
         const maxX = Math.max(0, arena.clientWidth - snitch.offsetWidth);
         const maxY = Math.max(0, arena.clientHeight - snitch.offsetHeight);
         const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        const x = maxX * (0.5 + (reducedMotion ? 0 : 0.46 * Math.sin(elapsed * 0.28)));
-        const y = maxY * (0.5 + (reducedMotion ? 0 : 0.44 * Math.sin(elapsed * 0.37 + 0.8)));
+        const x = maxX * (0.5 + (reducedMotion ? 0 : 0.46 * Math.sin(elapsed * 0.42)));
+        const y = maxY * (0.5 + (reducedMotion ? 0 : 0.44 * Math.sin(elapsed * 0.55 + 0.8)));
         snitch.style.transform = `translate3d(${x}px, ${y}px, 0)`;
         if (remaining > 0) flightAnimationFrame = requestAnimationFrame(update);
     };
