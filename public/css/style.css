@@ -3023,3 +3023,46 @@ button:disabled {
   .snitch-flight-arena { width: min(100%, calc(100dvh - 185px)); max-height: calc(100dvh - 185px); }
   .snitch-grid-cell { border-radius: 5px; padding: 0; }
 }
+
+
+/* Calm hovering Snitch, replacing the previous grid layout. */
+.snitch-flight-arena {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  aspect-ratio: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 8px auto;
+}
+.snitch-flight-arena .flying-snitch {
+  position: absolute;
+  display: block;
+  width: clamp(110px, 13vw, 170px);
+  height: clamp(110px, 13vw, 170px);
+  left: 0;
+  top: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  will-change: transform;
+}
+.snitch-flight-arena .flying-snitch img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.snitch-flight-arena .flying-snitch::before,
+.snitch-flight-arena .flying-snitch::after { display: none; content: none; }
+.snitch-flight-arena .flying-snitch.green { background: transparent; box-shadow: none; }
+@media (prefers-reduced-motion: reduce) {
+  .snitch-flight-arena .flying-snitch { will-change: auto; }
+}
