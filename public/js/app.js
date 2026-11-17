@@ -1752,7 +1752,8 @@ socket.on(
          * 6️⃣ Сохраняем сцену в глобальную переменную
          * ------------------------------------------------- */
         currentScene = scene;
-        if (scene.type === "snitch_mystery") {
+        if (scene.type === "snitch_mystery" || scene.type === "snitch_announcement") {
+            snitchDialogueIndex = 0;
             renderSnitchMystery(scene, snitchAnswer);
             return;
         }
@@ -2350,10 +2351,13 @@ function renderSnitchMystery(scene, answer = null) {
     dialoguePanel?.classList.add("hidden");
     charactersLayer?.replaceChildren();
     if (gameBackground) gameBackground.style.backgroundImage = "none";
-    document.getElementById("snitchTitle").textContent = "Кто украл Золотой Снитч?";
+    const isAnnouncement = scene.type === "snitch_announcement";
+    panel.classList.toggle("snitch-announcement", isAnnouncement);
+    document.getElementById("snitchTitle").textContent = isAnnouncement ? "" : "Кто украл Золотой Снитч?";
     document.getElementById("snitchDialogue").classList.remove("hidden");
-    document.getElementById("snitchVoting").classList.remove("hidden");
+    document.getElementById("snitchVoting").classList.toggle("hidden", isAnnouncement);
     showSnitchLine(scene);
+    if (isAnnouncement) return;
     const suspects = document.getElementById("snitchSuspects");
     suspects.replaceChildren();
     for (const suspect of scene.suspects) {
@@ -2452,7 +2456,7 @@ socket.on(
         // Показываем игровой экран
         gameScreen.classList.remove("hidden");
 
-        if (scene.type === "snitch_mystery") {
+        if (scene.type === "snitch_mystery" || scene.type === "snitch_announcement") {
             hideSceneTransition();
             snitchDialogueIndex = 0;
             renderSnitchMystery(scene);
