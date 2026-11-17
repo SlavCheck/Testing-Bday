@@ -769,14 +769,14 @@ function awardVotingPoints(game, scene, winner) {
  * 3. если ничего нет — игра завершена
  */
 function moveToNextScene(game) {
-    if (game.currentScene?.id === "snitch-announcement") {
+    if (game.gameType !== "classic" && game.currentScene?.id === "snitch-announcement") {
         game.currentScene = snitchScene;
         startSceneTimer(game, snitchScene.duration);
         io.to(`game_${game.id}`).emit("game:started", { scene: snitchScene, timer: game.sceneTimer });
         return;
     }
 
-    if (game.currentScene?.id === "snitch-theft") {
+    if (game.gameType !== "classic" && game.currentScene?.id === "snitch-theft") {
         game.currentScene = { ...snitchFlight };
         game.snitchFlightStartedAt = Date.now();
         startSceneTimer(game, snitchFlight.duration);
@@ -784,7 +784,7 @@ function moveToNextScene(game) {
         return;
     }
 
-    if (game.currentScene?.id === "snitch-flight") {
+    if (game.gameType !== "classic" && game.currentScene?.id === "snitch-flight") {
         game.currentScene = garlandFire;
         for (const player of game.players.values()) player.garlandAnswer = null;
         startSceneTimer(game, garlandFire.duration);
@@ -792,7 +792,7 @@ function moveToNextScene(game) {
         return;
     }
 
-    if (game.currentScene?.id === "garland-fire") {
+    if (game.gameType !== "classic" && game.currentScene?.id === "garland-fire") {
         game.currentScene = invisibilityCloak;
         for (const player of game.players.values()) player.cloakAnswer = null;
         startSceneTimer(game, invisibilityCloak.duration);
@@ -2250,6 +2250,7 @@ socket.on(
     socket.on("admin:jump_scene", ({ sceneId } = {}) => {
         if (!socket.isAdmin || !socket.gameId) return;
         const game = games.get(socket.gameId);
+        if (game?.gameType === "classic") return;
         if (!game || game.status !== "playing") return;
         const allowed = {
             "snitch-announcement": snitchAnnouncement,
