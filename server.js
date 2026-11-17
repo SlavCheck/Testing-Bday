@@ -592,10 +592,10 @@ function broadcastHouseScores(game) {
 }
 function broadcastLobbyUpdate(game) {
     const players = [...game.players.values()].map(player => ({
-        id: player.id, nickname: player.nickname, house: player.house
+        id: player.id, nickname: player.nickname, house: player.house, team: player.team
     }));
     if (game.adminSocketId) io.to(game.adminSocketId).emit("lobby:update", {
-        gameId: game.id, status: game.status, players
+        gameId: game.id, gameType: game.gameType || "harry-potter", status: game.status, players
     });
     broadcastHouseScores(game);
 }
@@ -1855,7 +1855,7 @@ io.on("connection", (socket) => {
                     id: normalizedPlayerId,
                     socketId: socket.id,
                     nickname: normalizedNick,
-                    house: assignNextHouse(game),
+                    house: game.gameType === "classic" ? null : assignNextHouse(game),
                     team: null,
                     score: 0,
                     currentChoice: null,
@@ -1863,7 +1863,9 @@ io.on("connection", (socket) => {
                     kicked: false
                 };
 
-                player.team = player.house; // Legacy scene compatibility
+                player.team = game.gameType === "classic"
+                    ? ["strategist", "joker", "critic"][game.players.size % 3]
+                    : player.house;
                 game.players.set(normalizedPlayerId, player);
 
                 // Привязываем сокет к комнате
