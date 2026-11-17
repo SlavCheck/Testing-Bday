@@ -2350,18 +2350,10 @@ function renderSnitchMystery(scene, answer = null) {
     dialoguePanel?.classList.add("hidden");
     charactersLayer?.replaceChildren();
     if (gameBackground) gameBackground.style.backgroundImage = "none";
-    document.getElementById("snitchTitle").textContent = scene.title;
+    document.getElementById("snitchTitle").textContent = "Кто украл Золотой Снитч?";
     document.getElementById("snitchDialogue").classList.remove("hidden");
     document.getElementById("snitchVoting").classList.remove("hidden");
     showSnitchLine(scene);
-    document.getElementById("snitchDescription").textContent = scene.text;
-    const clues = document.getElementById("snitchClues");
-    clues.replaceChildren();
-    for (const clue of scene.clues) {
-        const item = document.createElement("li");
-        item.textContent = clue;
-        clues.appendChild(item);
-    }
     const suspects = document.getElementById("snitchSuspects");
     suspects.replaceChildren();
     for (const suspect of scene.suspects) {
@@ -2375,18 +2367,23 @@ function renderSnitchMystery(scene, answer = null) {
         img.onerror = () => { img.style.display = "none"; };
         const name = document.createElement("strong");
         name.textContent = suspect.name;
-        button.append(img, name);
-        button.disabled = Boolean(savedSnitchAnswer) || isGamePaused;
+        const check = document.createElement("span");
+        check.className = "snitch-check";
+        check.textContent = "✓";
+        check.setAttribute("aria-hidden", "true");
+        button.append(img, name, check);
+        button.disabled = isGamePaused;
+        button.setAttribute("aria-pressed", String(savedSnitchAnswer === suspect.id));
         if (savedSnitchAnswer === suspect.id) button.classList.add("selected");
         button.addEventListener("click", () => {
-            if (savedSnitchAnswer || isGamePaused) return;
+            if (isGamePaused) return;
             socket.emit("snitch:answer", { suspectId: suspect.id });
         });
         suspects.appendChild(button);
     }
     document.getElementById("snitchAnswerStatus").textContent = savedSnitchAnswer
-        ? "Ответ принят. Ждём окончания испытания."
-        : "Выбери одного подозреваемого до конца общего таймера. Ответ изменить нельзя.";
+        ? "Выбор сохранён. Его можно изменить до окончания таймера."
+        : "";
 }
 socket.on("snitch:answer_saved", ({ suspectId }) => {
     if (currentScene?.type === "snitch_mystery") {
@@ -2394,11 +2391,12 @@ socket.on("snitch:answer_saved", ({ suspectId }) => {
         const buttons = document.querySelectorAll("#snitchSuspects .snitch-suspect");
         currentScene.suspects.forEach((suspect, i) => {
             if (buttons[i]) {
-                buttons[i].disabled = true;
+                buttons[i].disabled = isGamePaused;
                 buttons[i].classList.toggle("selected", suspect.id === suspectId);
+                buttons[i].setAttribute("aria-pressed", String(suspect.id === suspectId));
             }
         });
-        document.getElementById("snitchAnswerStatus").textContent = "Ответ принят. Ждём окончания испытания.";
+        document.getElementById("snitchAnswerStatus").textContent = "Выбор сохранён. Его можно изменить до окончания таймера.";
     }
 });
 
