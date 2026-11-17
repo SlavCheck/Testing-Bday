@@ -2944,3 +2944,32 @@ button:disabled {
   .snitch-flight { padding: 58px 8px 12px; }
   .snitch-flight-hint { font-size: 12px; }
 }
+
+
+/* Uploaded Snitch artwork replaces the temporary CSS-drawn symbol. */
+.flying-snitch,
+.flying-snitch.green {
+  background: transparent;
+  box-shadow: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  overflow: visible;
+}
+.flying-snitch::before,
+.flying-snitch::after {
+  content: none;
+  display: none;
+}
+.flying-snitch img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.flying-snitch.green img {
+  filter: drop-shadow(0 0 12px rgba(62, 255, 145, .65));
+}
