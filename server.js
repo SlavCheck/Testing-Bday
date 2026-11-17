@@ -12,6 +12,7 @@ const introScene =
     require("./game/scenes/intro");
 const snitchScene = require("./game/scenes/snitch-theft");
 const snitchAnnouncement = require("./game/scenes/snitch-announcement");
+const snitchFlight = require("./game/scenes/snitch-flight");
 const { assignNextHouse } = require("./game/services/houses");
 
 const PORT = process.env.PORT || 3000;
@@ -770,6 +771,14 @@ function moveToNextScene(game) {
         game.currentScene = snitchScene;
         startSceneTimer(game, snitchScene.duration);
         io.to(`game_${game.id}`).emit("game:started", { scene: snitchScene, timer: game.sceneTimer });
+        return;
+    }
+
+    if (game.currentScene?.id === "snitch-theft") {
+        game.currentScene = snitchFlight;
+        game.snitchFlightStartedAt = Date.now();
+        startSceneTimer(game, snitchFlight.duration);
+        io.to(`game_${game.id}`).emit("game:started", { scene: snitchFlight, timer: game.sceneTimer });
         return;
     }
 
@@ -2158,6 +2167,33 @@ socket.on(
         player.snitchAnswer = suspectId;
         if (suspectId === "ron") player.score += snitchScene.points;
         socket.emit("snitch:answer_saved", { suspectId });
+    });
+
+    // Authoritative scoring: green lasts one second, five times per round.
+    socket.on("snitch:flight_click", () => {
+        if (!socket.gameId) return;
+        const game = games.get(socket.gameId);
+        if (!game || game.status !== "playing" || game.currentScene?.id !== "snitch-flight" ||
+            !game.sceneTimer || Date.now() >= game.sceneTimer.endsAt) return;
+        const player = [...game.players.values()].find(p => p.socketId === socket.id);
+        if (!player) return;
+        const now = Date.now();
+        if (now - (player.lastFlightClickAt || 0) < 450) return;
+        player.lastFlightClickAt = now;
+        const elapsed = snitchFlight.duration * 1000 - (game.sceneTimer.endsAt - now);
+        const windowIndex = snitchFlight.greenWindows.findIndex(t =>
+            elapsed >= t * 1000 && elapsed < t * 1000 + snitchFlight.greenDurationMs);
+        let delta;
+        if (windowIndex >= 0) {
+            if (!player.flightCaughtWindows) player.flightCaughtWindows = new Set();
+            if (player.flightCaughtWindows.has(windowIndex)) return;
+            player.flightCaughtWindows.add(windowIndex);
+            delta = snitchFlight.greenPoints;
+        } else {
+            delta = snitchFlight.redPoints;
+        }
+        player.score += delta;
+        socket.emit("snitch:flight_result", { delta, score: player.score });
     });
 
     // ==================================================
