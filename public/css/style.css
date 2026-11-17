@@ -2587,7 +2587,7 @@ button:disabled {
 .snitch-mystery {
     background:
         linear-gradient(rgba(9, 12, 27, .78), rgba(12, 11, 25, .92)),
-        url("/assets/backgrounds/NewYearBG/room.png") center / cover fixed;
+        url("/assets/backgrounds/NewYearBG/hallway.png") center / cover fixed;
 }
 
 /* Testimony navigation never changes the server scene. */
@@ -2613,7 +2613,7 @@ button:disabled {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) minmax(210px, 30%);
   gap: clamp(6px, 1vh, 12px);
-  background: linear-gradient(180deg, rgba(6,9,22,.58), rgba(6,9,22,.82)), url("/assets/backgrounds/NewYearBG/room.png") center / cover no-repeat;
+  background: linear-gradient(180deg, rgba(6,9,22,.58), rgba(6,9,22,.82)), url("/assets/backgrounds/NewYearBG/hallway.png") center / cover no-repeat;
 }
 .snitch-mystery h1 { margin: 0; font-size: clamp(20px, 2.8vw, 34px); text-shadow: 0 2px 12px #000; }
 #snitchVoting {
