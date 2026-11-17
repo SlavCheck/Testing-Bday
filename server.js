@@ -15,6 +15,7 @@ const snitchAnnouncement = require("./game/scenes/snitch-announcement");
 const snitchFlight = require("./game/scenes/snitch-flight");
 const garlandFire = require("./game/scenes/garland-fire");
 const invisibilityCloak = require("./game/scenes/invisibility-cloak");
+const potionRecipe = require("./game/scenes/potion-recipe");
 const { assignNextHouse } = require("./game/services/houses");
 
 const PORT = process.env.PORT || 3000;
@@ -798,6 +799,15 @@ function moveToNextScene(game) {
         for (const player of game.players.values()) player.cloakAnswer = null;
         startSceneTimer(game, invisibilityCloak.duration);
         io.to(`game_${game.id}`).emit("game:started", { scene: invisibilityCloak, timer: game.sceneTimer });
+        return;
+    }
+
+    if (game.gameType !== "classic" && game.currentScene?.id === "invisibility-cloak") {
+        game.currentScene = potionRecipe;
+        game.potionStartedAt = Date.now();
+        for (const player of game.players.values()) player.potionAnswer = [];
+        startSceneTimer(game, potionRecipe.duration);
+        io.to(`game_${game.id}`).emit("game:started", { scene: publicPotionScene(), timer: game.sceneTimer });
         return;
     }
 
@@ -2237,6 +2247,29 @@ socket.on(
         socket.emit("garland:answer_result", { answerId });
     });
 
+    // The recipe's correct IDs are never sent to players during the selection phase.
+    function publicPotionScene() {
+        const { correctIds, ...safeScene } = potionRecipe;
+        return safeScene;
+    }
+    socket.on("potion:answer", ({ ingredientIds } = {}) => {
+        if (!socket.gameId || !Array.isArray(ingredientIds) || ingredientIds.length > 6) return;
+        const game = games.get(socket.gameId);
+        if (!game || game.status !== "playing" || game.currentScene?.id !== "potion-recipe" ||
+            !game.sceneTimer || Date.now() >= game.sceneTimer.endsAt ||
+            Date.now() < game.sceneTimer.endsAt - (potionRecipe.duration - potionRecipe.memorizeSeconds) * 1000) return;
+        const valid = new Set(potionRecipe.ingredients.map(item => item.id));
+        if (new Set(ingredientIds).size !== ingredientIds.length || ingredientIds.some(id => !valid.has(id))) return;
+        const player = [...game.players.values()].find(p => p.socketId === socket.id);
+        if (!player) return;
+        const correct = ids => ids.length === 6 && potionRecipe.correctIds.every(id => ids.includes(id));
+        const previousCorrect = correct(player.potionAnswer || []);
+        const nextCorrect = correct(ingredientIds);
+        if (previousCorrect !== nextCorrect) player.score += nextCorrect ? potionRecipe.points : -potionRecipe.points;
+        player.potionAnswer = ingredientIds.slice();
+        socket.emit("potion:answer_result", { ingredientIds: player.potionAnswer });
+    });
+
     socket.on("cloak:answer", ({ zone } = {}) => {
         if (!socket.gameId || !Number.isInteger(zone) || zone < 0 || zone > 3) return;
         const game = games.get(socket.gameId);
@@ -2262,13 +2295,17 @@ socket.on(
             "snitch-theft": snitchScene,
             "snitch-flight": snitchFlight,
             "garland-fire": garlandFire,
-            "invisibility-cloak": invisibilityCloak
+            "invisibility-cloak": invisibilityCloak,
+            "potion-recipe": potionRecipe
         };
         if (!Object.prototype.hasOwnProperty.call(allowed, sceneId)) return;
         if (game.sceneTimerTimeout) clearTimeout(game.sceneTimerTimeout);
         game.sceneTimerTimeout = null;
         game.sceneTimer = null;
         game.currentScene = sceneId === "snitch-flight" ? { ...snitchFlight } : allowed[sceneId];
+        if (sceneId === "potion-recipe") {
+            for (const player of game.players.values()) player.potionAnswer = [];
+        }
         if (sceneId === "invisibility-cloak") {
             for (const player of game.players.values()) player.cloakAnswer = null;
         }
@@ -2283,7 +2320,7 @@ socket.on(
         }
         startSceneTimer(game, game.currentScene.duration);
         io.to(`game_${game.id}`).emit("game:started", {
-            scene: game.currentScene,
+            scene: sceneId === "potion-recipe" ? publicPotionScene() : game.currentScene,
             timer: game.sceneTimer
         });
         socket.emit("admin:jump_scene_result", { sceneId });
