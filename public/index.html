@@ -212,6 +212,23 @@
       </div>
     </section>
 
+    <section id="treeSpell" class="tree-spell hidden" aria-label="Финальное испытание">
+      <div class="tree-spell-card">
+        <div class="tree-visual" aria-hidden="true">🎄✨</div>
+        <h1>Зажги ёлку!</h1>
+        <p>Соберите заклинание из пяти слов. Каждому слову соответствует число — разгадайте порядок вместе!</p>
+        <h2 id="treeRoleTitle"></h2>
+        <p id="treeRoleInfo"></p>
+        <div id="treeWordParts" class="tree-word-parts"></div>
+        <form id="treeSpellForm" class="hidden">
+          <label for="treeSpellInput">Введите заклинание в правильном порядке</label>
+          <input id="treeSpellInput" type="text" autocomplete="off" maxlength="200" required>
+          <button type="submit">Произнести заклинание ✨</button>
+        </form>
+        <p id="treeSpellFeedback" aria-live="polite"></p>
+      </div>
+    </section>
+
     <section id="potionNegativeTest" class="potion-negative hidden" aria-label="Негативное тестирование зелья удачи">
       <div class="potion-negative-card">
         <div class="potion-negative-cauldron" aria-hidden="true">🧪</div>
