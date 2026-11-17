@@ -81,7 +81,8 @@ const adminStatus =
 
 
 const ADMIN_SESSION_KEY = "testingBday_adminSession";
-function showAdminGame(gameId, status = "lobby") {
+function showAdminGame(gameId, status = "lobby", gameType = "harry-potter") {
+    adminGameTypeLabel.textContent = GAME_MODE_LABELS[gameType] || GAME_MODE_LABELS["harry-potter"];
     gameCodeElement.textContent = gameId;
     lobbyLink.value = `${window.location.origin}/?game=${gameId}`;
     createGameSection.classList.add("hidden");
@@ -106,7 +107,7 @@ socket.on("connect", () => {
         if (session.gameId && session.adminToken) socket.emit("admin:restore_game", session);
     } catch { localStorage.removeItem(ADMIN_SESSION_KEY); }
 });
-socket.on("admin:game_restored", ({ gameId, status }) => showAdminGame(gameId, status));
+socket.on("admin:game_restored", ({ gameId, status, gameType }) => showAdminGame(gameId, status, gameType));
 socket.on("admin:restore_error", ({ message }) => {
     localStorage.removeItem(ADMIN_SESSION_KEY);
     createGameSection.classList.remove("hidden");
@@ -120,35 +121,27 @@ socket.on("admin:restore_error", ({ message }) => {
 // CREATE GAME
 // ==================================================
 
-createGameButton.addEventListener(
-    "click",
-    () => {
-
-        console.log(
-            "Создаём игру..."
-        );
-
-        createGameButton.disabled =
-            true;
-
-        createGameButton.textContent =
-            "СОЗДАНИЕ...";
-
-        socket.emit(
-            "admin:create_game"
-        );
-
-    }
-);
-
+const createClassicGameButton = document.getElementById("createClassicGameButton");
+const adminGameTypeLabel = document.getElementById("adminGameTypeLabel");
+const GAME_MODE_LABELS = {
+    classic: "🚀 Star Test Quest",
+    "harry-potter": "⚡ Гарри Поттер: Битва за Новый год"
+};
+function createGameOfType(gameType) {
+    createGameButton.disabled = true;
+    createClassicGameButton.disabled = true;
+    socket.emit("admin:create_game", { gameType });
+}
+createGameButton.addEventListener("click", () => createGameOfType("harry-potter"));
+createClassicGameButton.addEventListener("click", () => createGameOfType("classic"));
 
 // ==================================================
 // GAME CREATED
 // ==================================================
 
-socket.on("admin:game_created", ({ gameId, adminToken }) => {
+socket.on("admin:game_created", ({ gameId, gameType, adminToken }) => {
     localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify({ gameId, adminToken }));
-    showAdminGame(gameId, "lobby");
+    showAdminGame(gameId, "lobby", gameType);
 });
 
 // ==================================================
