@@ -11,6 +11,7 @@ const io = new Server(server);
 const introScene =
     require("./game/scenes/intro");
 const snitchScene = require("./game/scenes/snitch-theft");
+const snitchAnnouncement = require("./game/scenes/snitch-announcement");
 const { assignNextHouse } = require("./game/services/houses");
 
 const PORT = process.env.PORT || 3000;
@@ -765,6 +766,12 @@ function awardVotingPoints(game, scene, winner) {
  * 3. если ничего нет — игра завершена
  */
 function moveToNextScene(game) {
+    if (game.currentScene?.id === "snitch-announcement") {
+        game.currentScene = snitchScene;
+        startSceneTimer(game, snitchScene.duration);
+        io.to(`game_${game.id}`).emit("game:started", { scene: snitchScene, timer: game.sceneTimer });
+        return;
+    }
 
     if (game.sceneTimerTimeout) {
         clearTimeout(game.sceneTimerTimeout);
@@ -2103,10 +2110,10 @@ socket.on(
 
 
             game.currentScene =
-                snitchScene;
+                snitchAnnouncement;
 
-            // One authoritative 90-second scene clock for all connected players.
-            startSceneTimer(game, snitchScene.duration);
+            // Announcement runs on its own server timer, before testimony and voting.
+            startSceneTimer(game, snitchAnnouncement.duration);
 
             game.voting = {
                 active: false,
@@ -2125,7 +2132,7 @@ socket.on(
             ).emit(
                 "game:started",
                 {
-                    scene: snitchScene,
+                    scene: snitchAnnouncement,
                     timer: game.sceneTimer
                 }
             );
