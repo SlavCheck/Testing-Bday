@@ -3555,7 +3555,7 @@ socket.on(
 
         if (houseScores) {
             const heading = document.createElement("h2");
-            heading.textContent = "Кубок факультетов — промежуточный итог испытания";
+            heading.textContent = "🏆 Турнир Четырёх Факультетов — итоговый рейтинг";
             resultsList.appendChild(heading);
             const names = {
                 gryffindor: "🦁 Гриффиндор", slytherin: "🐍 Слизерин",
