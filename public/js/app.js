@@ -2325,7 +2325,7 @@ function renderSnitchFlight(scene, timer) {
     bugSearch?.classList.add("hidden");
     charactersLayer?.replaceChildren();
     document.getElementById("snitchFlight").classList.remove("hidden");
-    document.getElementById("snitchFlightStatus").textContent = "";
+
     const arena = document.getElementById("snitchFlightArena");
     const snitch = document.getElementById("flyingSnitch");
     const img = document.getElementById("flyingSnitchImage");
