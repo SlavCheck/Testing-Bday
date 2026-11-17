@@ -1766,7 +1766,7 @@ socket.on(
         currentScene = scene;
         if (scene.type === "potion_negative_test") {
             negativePotionOrder = [];
-            renderNegativePotionTest(scene, negativePotionAnswer);
+            renderNegativePotionTest(scene, timer, negativePotionAnswer);
             return;
         }
         if (scene.type === "potion_recipe") {
@@ -2349,7 +2349,8 @@ function stopSnitchFlight() {
 }
 let negativePotionSelectedIds = [];
 let negativePotionOrder = [];
-function renderNegativePotionTest(scene, restoredAnswer) {
+function renderNegativePotionTest(scene, timer, restoredAnswer) {
+    const endsAt = timer?.endsAt || Date.now() + scene.duration * 1000;
     if (Array.isArray(restoredAnswer)) negativePotionSelectedIds = restoredAnswer.slice();
     stopSnitchFlight();
     for (const id of ["snitchMystery", "garlandFire", "cloakSearch", "potionRecipe"]) {
@@ -2381,9 +2382,9 @@ function renderNegativePotionTest(scene, restoredAnswer) {
             button.textContent = (negativePotionSelectedIds.includes(option.id) ? "✓ " : "") + option.label;
             button.classList.toggle("selected", negativePotionSelectedIds.includes(option.id));
             button.setAttribute("aria-pressed", String(negativePotionSelectedIds.includes(option.id)));
-            button.disabled = isGamePaused;
+            button.disabled = isGamePaused || Date.now() >= endsAt;
             button.addEventListener("click", () => {
-                if (currentScene?.type !== "potion_negative_test" || isGamePaused) return;
+                if (currentScene?.type !== "potion_negative_test" || isGamePaused || Date.now() >= endsAt) return;
                 if (negativePotionSelectedIds.includes(option.id)) {
                     negativePotionSelectedIds = negativePotionSelectedIds.filter(id => id !== option.id);
                 } else if (negativePotionSelectedIds.length < 2) {
@@ -2807,7 +2808,7 @@ socket.on(
 
         if (scene.type === "potion_negative_test") {
             hideSceneTransition();
-            renderNegativePotionTest(scene);
+            renderNegativePotionTest(scene, timer);
             return;
         }
         if (scene.type === "potion_recipe") {
