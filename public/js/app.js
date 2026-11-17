@@ -2348,12 +2348,13 @@ function renderSnitchFlight(scene, timer) {
             snitch.classList.toggle("green", active);
             wasGreen = active;
         }
-        // Small, slow, predictable hover: no full-screen chase or abrupt turns.
-        const x = Math.max(0, (arena.clientWidth - snitch.offsetWidth) / 2);
-        const y = Math.max(0, (arena.clientHeight - snitch.offsetHeight) / 2);
-        const hoverX = Math.sin(elapsed * 0.38) * Math.min(28, x * 0.6);
-        const hoverY = Math.sin(elapsed * 0.52) * Math.min(18, y * 0.6);
-        snitch.style.transform = `translate3d(${x + hoverX}px, ${y + hoverY}px, 0)`;
+        // Gently travel inside the centered play field, never across the whole screen.
+        const maxX = Math.max(0, arena.clientWidth - snitch.offsetWidth);
+        const maxY = Math.max(0, arena.clientHeight - snitch.offsetHeight);
+        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const x = maxX * (0.5 + (reducedMotion ? 0 : 0.46 * Math.sin(elapsed * 0.28)));
+        const y = maxY * (0.5 + (reducedMotion ? 0 : 0.44 * Math.sin(elapsed * 0.37 + 0.8)));
+        snitch.style.transform = `translate3d(${x}px, ${y}px, 0)`;
         if (remaining > 0) flightAnimationFrame = requestAnimationFrame(update);
     };
     update();
