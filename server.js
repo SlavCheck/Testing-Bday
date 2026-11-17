@@ -533,7 +533,6 @@ function sendPlayerState(socket, game, player) {
         team: player.team,
         house: player.house,
         snitchAnswer: player.snitchAnswer || null,
-        snitchDialogueComplete: Boolean(game.snitchReady?.has(player.id)),
         score: player.score,
     
         status: game.status,
@@ -2106,9 +2105,8 @@ socket.on(
             game.currentScene =
                 snitchScene;
 
-            // The voting clock begins only after every player has read the dialogues.
-            game.snitchReady = new Set();
-            game.sceneTimer = null;
+            // One authoritative 90-second scene clock for all connected players.
+            startSceneTimer(game, snitchScene.duration);
 
             game.voting = {
                 active: false,
@@ -2136,20 +2134,6 @@ socket.on(
 
         }
     );
-
-    socket.on("snitch:dialogue_complete", () => {
-        const game = games.get(socket.gameId);
-        if (!game || game.status !== "playing" || game.currentScene?.id !== "snitch-theft" || game.sceneTimer) return;
-        const player = [...game.players.values()].find(p => p.socketId === socket.id);
-        if (!player) return;
-        game.snitchReady ||= new Set();
-        game.snitchReady.add(player.id);
-        const everyoneReady = [...game.players.values()].every(p => game.snitchReady.has(p.id));
-        if (everyoneReady) {
-            startSceneTimer(game, snitchScene.duration);
-            io.to(`game_${game.id}`).emit("snitch:voting_started");
-        }
-    });
 
     // One answer per player; no score or correct answer is exposed before timeout.
     socket.on("snitch:answer", ({ suspectId } = {}) => {
