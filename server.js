@@ -2143,8 +2143,11 @@ socket.on(
             game.currentScene?.id !== "snitch-theft" ||
             !game.sceneTimer || Date.now() >= game.sceneTimer.endsAt) return;
         const player = [...game.players.values()].find(p => p.socketId === socket.id);
-        if (!player || player.snitchAnswer) return;
+        if (!player) return;
         if (!snitchScene.suspects.some(suspect => suspect.id === suspectId)) return;
+        // Revisions are allowed until the shared deadline. Only the latest
+        // answer counts; remove any previously awarded points before updating.
+        if (player.snitchAnswer === "ron") player.score -= snitchScene.points;
         player.snitchAnswer = suspectId;
         if (suspectId === "ron") player.score += snitchScene.points;
         socket.emit("snitch:answer_saved", { suspectId });
