@@ -2887,3 +2887,60 @@ button:disabled {
     max-height: 45%;
   }
 }
+
+
+/* Flying Snitch round: full-screen arena, no page scrolling. */
+.snitch-flight {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  height: 100dvh;
+  overflow: hidden;
+  background: linear-gradient(#06140d55, #06140d88), url("/assets/backgrounds/NewYearBG/hallway.png") center / cover no-repeat;
+  color: #e4ffed;
+  text-align: center;
+  padding: 74px 4vw 20px;
+  display: flex;
+  flex-direction: column;
+}
+.snitch-flight h1 { margin: 0; font-size: clamp(23px, 3vw, 38px); color: #9ee9bd; }
+.snitch-flight-hint { margin: 7px 0; font-size: clamp(13px, 1.5vw, 18px); }
+.snitch-flight-arena { position: relative; flex: 1; min-height: 0; width: 100%; }
+.flying-snitch {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: clamp(55px, 7vw, 92px);
+  height: clamp(55px, 7vw, 92px);
+  border: 0;
+  border-radius: 50%;
+  color: #ffe8c0;
+  font-size: clamp(35px, 5vw, 65px);
+  background: radial-gradient(circle at 35% 30%, #ff8c84, #c8243c 60%, #6b0b27);
+  box-shadow: 0 0 22px #f44336aa, inset 0 0 14px #fff5;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  will-change: transform;
+}
+.flying-snitch::before, .flying-snitch::after {
+  content: "";
+  position: absolute;
+  top: 14%;
+  width: 45%;
+  height: 42%;
+  border-radius: 80% 20% 70% 20%;
+  background: #e8f6eccc;
+  opacity: .8;
+}
+.flying-snitch::before { right: 78%; transform: rotate(-30deg); }
+.flying-snitch::after { left: 78%; transform: scaleX(-1) rotate(-30deg); }
+.flying-snitch.green {
+  background: radial-gradient(circle at 35% 30%, #c4ffd6, #26b979 60%, #08603f);
+  box-shadow: 0 0 35px #4effa8, inset 0 0 14px #fff9;
+}
+.snitch-flight-status { min-height: 30px; margin: 0; font-weight: bold; color: #b6ffcf; }
+@media (max-width: 767px) {
+  .snitch-flight { padding: 58px 8px 12px; }
+  .snitch-flight-hint { font-size: 12px; }
+}
