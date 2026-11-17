@@ -1,7 +1,7 @@
 "use strict";
 module.exports = {
  id: "potion-recipe", type: "potion_recipe", title: "Собери зелье по рецепту!",
- duration: 80, memorizeSeconds: 20, points: 30,
+ duration: 60, memorizeSeconds: 30, points: 30,
  recipeText: "Для приготовления зелья удачи возьмите корень мандрагоры и измельчите его. Добавьте шкуру бумсланга и тщательно перемешайте. Влейте слезу феникса и доведите до кипения. В конце добавьте порошок бирюзы и щепотку волос единорога. Варите 5 минут, помешивая палочкой из остролиста.",
  ingredients: [
   {id:"boomslang",label:"Шкура бумсланга"},
