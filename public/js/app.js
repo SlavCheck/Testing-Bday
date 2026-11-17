@@ -264,10 +264,18 @@ const HOUSE_NAMES = {
     ravenclaw: "🦅 Когтевран",
     hufflepuff: "🦡 Пуффендуй"
 };
-function showAssignedHouse(house) {
-    if (!house) return;
-    if (selectedTeamText) selectedTeamText.textContent =
-        `Твой факультет: ${HOUSE_NAMES[house] || house}`;
+const CLASSIC_TEAM_NAMES = {
+    strategist: "📋 Стратеги",
+    joker: "🎭 Шутники",
+    critic: "🔎 Критики"
+};
+function showAssignedGroup(house, team, gameType) {
+    const isClassic = gameType === "classic" || (!house && team in CLASSIC_TEAM_NAMES);
+    const heading = document.getElementById("assignmentHeading");
+    if (heading) heading.textContent = isClassic ? "Твоя команда определена!" : "Твой факультет определён!";
+    if (selectedTeamText) selectedTeamText.textContent = isClassic
+        ? `Твоя команда: ${CLASSIC_TEAM_NAMES[team] || team || "Не определена"}`
+        : `Твой факультет: ${HOUSE_NAMES[house] || house || "Не определён"}`;
 }
 
 const characterName =
@@ -1451,6 +1459,7 @@ socket.on(
         restored = false,
         team = null,
         house = null,
+        gameType = "harry-potter",
         gameStarted = false,
         scene = null,
         timer = null,
@@ -1522,7 +1531,7 @@ socket.on(
             );
 
 
-            showAssignedHouse(house || team);
+            showAssignedGroup(house, team, gameType);
 
             // ------------------------------------------
             // Игра уже началась
@@ -1574,7 +1583,7 @@ socket.on(
         lobbyScreen.classList.add("hidden");
         teamScreen.classList.add("hidden");
         gameScreen.classList.add("hidden");
-        showAssignedHouse(house || team);
+        showAssignedGroup(house, team, gameType);
         waitingScreen.classList.remove("hidden");
 
     }
@@ -1590,6 +1599,7 @@ socket.on(
         nickname,
         team,
         house,
+        gameType = "harry-potter",
         snitchAnswer,
         score,
         status,
@@ -1636,7 +1646,7 @@ socket.on(
         kickedScreen?.classList.add("hidden");
         gameScreen?.classList.remove("hidden");
 
-        showAssignedHouse(house || team);
+        showAssignedGroup(house, team, gameType);
         if (status === "lobby") {
             gameScreen?.classList.add("hidden");
             waitingScreen?.classList.remove("hidden");
