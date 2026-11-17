@@ -1,0 +1,2 @@
+"use strict";
+module.exports={id:"tree-intro",type:"tree_intro",title:"Последнее испытание",duration:12,background:"/assets/backgrounds/NewYearBG/hallway.png",text:"Дамблдор: «Зелье протестировано! Но ёлка всё ещё не горит. Нам нужно нечто особенное!» Макгонагалл: «Каждый факультет должен произнести своё новогоднее заклинание! Но слова разбиты. Только вместе вы сможете их собрать!»",nextSceneId:"tree-spell"};
