@@ -2357,12 +2357,12 @@ function renderPotionRecipe(scene, timer, restoredAnswer) {
     document.getElementById("potionTitle").textContent = scene.title;
     const instructions = document.getElementById("potionInstructions");
     const ingredients = document.getElementById("potionIngredients");
+    const parchment = document.getElementById("potionParchment");
+    document.getElementById("potionRecipeText").textContent = scene.recipeText;
     const feedback = document.getElementById("potionFeedback");
     const end = timer?.endsAt || Date.now() + scene.duration * 1000;
     const selectionStart = end - (scene.duration - scene.memorizeSeconds) * 1000;
-    const valid = new Set(scene.ingredients.map(item => item.id));
-    const correct = new Set(["boomslang", "turquoise", "unicorn_hair", "holly_wand", "phoenix_tear", "mandrake"]);
-    // Only show the recipe in the memorization phase; answers are validated server-side.
+    // The recipe is shown as prose on parchment, not as a list of ingredients.
     function refresh() {
         if (currentScene?.type !== "potion_recipe") {
             clearInterval(potionPhaseInterval);
@@ -2375,9 +2375,10 @@ function renderPotionRecipe(scene, timer, restoredAnswer) {
         instructions.textContent = memorizing
             ? "Запомни шесть ингредиентов! Рецепт исчезнет через " + Math.ceil((selectionStart - now) / 1000) + " сек."
             : "Выбери ровно 6 ингредиентов по памяти. Можно менять выбор до окончания времени.";
+        parchment.classList.toggle("hidden", !memorizing);
+        ingredients.classList.toggle("hidden", memorizing);
         ingredients.replaceChildren();
-        const shown = memorizing ? scene.ingredients.filter(item => correct.has(item.id)) : scene.ingredients;
-        for (const item of shown) {
+        for (const item of memorizing ? [] : scene.ingredients) {
             const button = document.createElement("button");
             button.type = "button";
             button.className = "potion-ingredient";
@@ -2393,7 +2394,7 @@ function renderPotionRecipe(scene, timer, restoredAnswer) {
             });
             ingredients.appendChild(button);
         }
-        feedback.textContent = memorizing ? "Изучи рецепт: эти ингредиенты нужно будет вспомнить." :
+        feedback.textContent = memorizing ? "Прочитай пергамент и запомни состав зелья." :
             expired ? "Время вышло." : "Выбрано: " + potionSelectedIds.length + " из 6";
     }
     refresh();
