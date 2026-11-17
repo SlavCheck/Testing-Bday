@@ -2353,7 +2353,7 @@ function renderSnitchFlight(scene, timer) {
         const maxX = Math.max(0, arena.clientWidth - snitch.offsetWidth);
         const maxY = Math.max(0, arena.clientHeight - snitch.offsetHeight);
         const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        const hopDuration = 0.72;
+        const hopDuration = 0.52;
         const greenStart = scene.greenWindows.find(t => elapsed >= t && elapsed < t + scene.greenDurationMs / 1000);
         const motionTime = greenStart === undefined ? elapsed : greenStart;
         const hop = Math.floor(motionTime / hopDuration);
@@ -2362,12 +2362,12 @@ function renderSnitchFlight(scene, timer) {
             const value = Math.sin((step + 1) * 127.1 + salt * 311.7) * 43758.5453;
             return value - Math.floor(value);
         };
-        const fromX = hop === 0 ? 0.5 : 0.12 + randomAt(hop - 1, 1) * 0.76;
-        const fromY = hop === 0 ? 0.5 : 0.12 + randomAt(hop - 1, 2) * 0.76;
-        const toX = 0.12 + randomAt(hop, 1) * 0.76;
-        const toY = 0.12 + randomAt(hop, 2) * 0.76;
-        // Dart in the first 130 ms, then pause; no full-screen flashing.
-        const t = Math.min(1, phase / (0.13 / hopDuration));
+        const fromX = hop === 0 ? 0.5 : 0.03 + randomAt(hop - 1, 1) * 0.94;
+        const fromY = hop === 0 ? 0.5 : 0.03 + randomAt(hop - 1, 2) * 0.94;
+        const toX = 0.03 + randomAt(hop, 1) * 0.94;
+        const toY = 0.03 + randomAt(hop, 2) * 0.94;
+        // Fast long-range dart followed by a short pause.
+        const t = Math.min(1, phase / (0.105 / hopDuration));
         const ease = t * t * (3 - 2 * t);
         const x = reducedMotion ? maxX / 2 : maxX * (fromX + (toX - fromX) * ease);
         const y = reducedMotion ? maxY / 2 : maxY * (fromY + (toY - fromY) * ease);
