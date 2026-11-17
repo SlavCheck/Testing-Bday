@@ -483,3 +483,5 @@ button {
         #35191d;
 
 }
+.game-mode-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.game-mode-actions .primary-button { flex: 1 1 260px; white-space: normal; line-height: 1.4; }
