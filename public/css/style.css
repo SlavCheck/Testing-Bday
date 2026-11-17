@@ -3066,3 +3066,37 @@ button:disabled {
 @media (prefers-reduced-motion: reduce) {
   .snitch-flight-arena .flying-snitch { will-change: auto; }
 }
+
+
+/* Centered, clearly bounded Snitch play field. */
+.snitch-flight {
+  align-items: center;
+}
+.snitch-flight-arena {
+  position: relative;
+  display: block;
+  flex: 0 1 auto;
+  width: min(440px, 90vw, calc((100dvh - 220px) * 1.375));
+  height: auto;
+  aspect-ratio: 11 / 8;
+  max-width: 100%;
+  max-height: calc(100dvh - 220px);
+  min-height: 0;
+  margin: auto;
+  border: 2px solid rgba(136, 218, 163, .72);
+  border-radius: 18px;
+  background: rgba(5, 30, 19, .67);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, .3), inset 0 0 22px rgba(47, 119, 74, .2);
+  overflow: hidden;
+}
+.snitch-flight-arena .flying-snitch {
+  width: clamp(75px, 11vw, 112px);
+  height: clamp(75px, 11vw, 112px);
+}
+@media (max-width: 600px) {
+  .snitch-flight-arena {
+    width: min(92vw, 390px, calc((100dvh - 190px) * 1.375));
+    max-height: calc(100dvh - 190px);
+    border-radius: 12px;
+  }
+}
