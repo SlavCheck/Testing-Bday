@@ -2831,3 +2831,39 @@ button:disabled {
   .snitch-suspect-image { width: 100%; height: min(9vh, 65px); }
   .snitch-check { right: 4px; top: 4px; width: 22px; height: 22px; line-height: 22px; font-size: 16px; }
 }
+
+
+/* Full-bleed scene: no black header strip. Controls float over the image. */
+.snitch-mystery {
+  inset: 0;
+  height: 100dvh;
+  padding-top: clamp(66px, 9vh, 88px);
+}
+.top-right-controls {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  z-index: 10000;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+#sceneTimer,
+#voiceToggle {
+  background: rgba(8, 33, 27, .55);
+  border: 1px solid rgba(119, 209, 163, .24);
+  box-shadow: none;
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+}
+#voiceToggle:hover { background: rgba(19, 75, 53, .75); }
+@media (max-width: 767px) {
+  .snitch-mystery {
+    inset: 0;
+    height: 100dvh;
+    padding-top: 60px;
+  }
+  .top-right-controls { top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); gap: 6px; }
+  #sceneTimer { min-width: 66px; height: 36px; padding: 6px 8px; font-size: 14px; }
+  #voiceToggle { min-width: 0; height: 36px; padding: 6px 9px; font-size: 12px; }
+}
