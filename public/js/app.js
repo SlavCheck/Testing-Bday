@@ -2354,8 +2354,10 @@ function renderSnitchFlight(scene, timer) {
         const maxY = Math.max(0, arena.clientHeight - snitch.offsetHeight);
         const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         const hopDuration = 0.72;
-        const hop = Math.floor(elapsed / hopDuration);
-        const phase = (elapsed / hopDuration) - hop;
+        const greenStart = scene.greenWindows.find(t => elapsed >= t && elapsed < t + scene.greenDurationMs / 1000);
+        const motionTime = greenStart === undefined ? elapsed : greenStart;
+        const hop = Math.floor(motionTime / hopDuration);
+        const phase = (motionTime / hopDuration) - hop;
         const randomAt = (step, salt) => {
             const value = Math.sin((step + 1) * 127.1 + salt * 311.7) * 43758.5453;
             return value - Math.floor(value);
