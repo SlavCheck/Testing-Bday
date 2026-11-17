@@ -16,6 +16,7 @@ const snitchFlight = require("./game/scenes/snitch-flight");
 const garlandFire = require("./game/scenes/garland-fire");
 const invisibilityCloak = require("./game/scenes/invisibility-cloak");
 const potionRecipe = require("./game/scenes/potion-recipe");
+const potionIntro = require("./game/scenes/potion-intro");
 const { assignNextHouse } = require("./game/services/houses");
 
 const PORT = process.env.PORT || 3000;
@@ -808,6 +809,12 @@ function moveToNextScene(game) {
     }
 
     if (game.gameType !== "classic" && game.currentScene?.id === "invisibility-cloak") {
+        game.currentScene = potionIntro;
+        startSceneTimer(game, potionIntro.duration);
+        io.to(`game_${game.id}`).emit("game:started", { scene: potionIntro, timer: game.sceneTimer });
+        return;
+    }
+    if (game.gameType !== "classic" && game.currentScene?.id === "potion-intro") {
         game.currentScene = potionRecipe;
         game.potionStartedAt = Date.now();
         for (const player of game.players.values()) player.potionAnswer = [];
@@ -2297,7 +2304,8 @@ socket.on(
             "snitch-flight": snitchFlight,
             "garland-fire": garlandFire,
             "invisibility-cloak": invisibilityCloak,
-            "potion-recipe": potionRecipe
+            "potion-recipe": potionRecipe,
+            "potion-intro": potionIntro
         };
         if (!Object.prototype.hasOwnProperty.call(allowed, sceneId)) return;
         if (game.sceneTimerTimeout) clearTimeout(game.sceneTimerTimeout);
