@@ -1752,6 +1752,10 @@ socket.on(
          * 6️⃣ Сохраняем сцену в глобальную переменную
          * ------------------------------------------------- */
         currentScene = scene;
+        if (scene.type === "garland_fire") {
+            renderGarlandFire(scene);
+            return;
+        }
         if (scene.type === "snitch_flight") {
             renderSnitchFlight(scene, timer);
             return;
@@ -2318,6 +2322,46 @@ function stopSnitchFlight() {
     document.querySelectorAll(".snitch-score-popup").forEach(node => node.remove());
     document.getElementById("snitchFlight")?.classList.add("hidden");
 }
+let garlandSelectedAnswer = null;
+function renderGarlandFire(scene) {
+    stopSnitchFlight();
+    document.getElementById("snitchMystery")?.classList.add("hidden");
+    dialoguePanel?.classList.add("hidden");
+    bugSearch?.classList.add("hidden");
+    charactersLayer?.replaceChildren();
+    const section = document.getElementById("garlandFire");
+    section.classList.remove("hidden");
+    document.getElementById("garlandTitle").textContent = scene.title;
+    document.getElementById("garlandQuestion").textContent = scene.question;
+    const options = document.getElementById("garlandOptions");
+    options.replaceChildren();
+    const feedback = document.getElementById("garlandFeedback");
+    feedback.textContent = garlandSelectedAnswer ? "Заклинание выбрано. До конца времени можно изменить ответ." : "Выбери одно заклинание до окончания таймера.";
+    for (const option of scene.options) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "garland-option";
+        button.textContent = option.label;
+        button.classList.toggle("selected", garlandSelectedAnswer === option.id);
+        button.setAttribute("aria-pressed", String(garlandSelectedAnswer === option.id));
+        button.addEventListener("click", () => {
+            if (isGamePaused || currentScene?.type !== "garland_fire") return;
+            garlandSelectedAnswer = option.id;
+            options.querySelectorAll("button").forEach(b => {
+                const selected = b === button;
+                b.classList.toggle("selected", selected);
+                b.setAttribute("aria-pressed", String(selected));
+            });
+            feedback.textContent = "Заклинание выбрано. До конца времени можно изменить ответ.";
+            socket.emit("garland:answer", { answerId: option.id });
+        });
+        options.appendChild(button);
+    }
+}
+socket.on("garland:answer_result", ({ answerId }) => {
+    if (currentScene?.type === "garland_fire") garlandSelectedAnswer = answerId;
+});
+
 function renderSnitchFlight(scene, timer) {
     stopSnitchFlight();
     document.getElementById("snitchMystery")?.classList.add("hidden");
@@ -2524,6 +2568,8 @@ socket.on(
 
         currentScene = scene;
         stopSnitchFlight();
+        document.getElementById("garlandFire")?.classList.add("hidden");
+        if (scene.type === "garland_fire") garlandSelectedAnswer = null;
 
         // Запускаем общий таймер сцены
         if (timer && timer.endsAt) {
@@ -2554,6 +2600,11 @@ socket.on(
         // Показываем игровой экран
         gameScreen.classList.remove("hidden");
 
+        if (scene.type === "garland_fire") {
+            hideSceneTransition();
+            renderGarlandFire(scene);
+            return;
+        }
         if (scene.type === "snitch_flight") {
             hideSceneTransition();
             renderSnitchFlight(scene, timer);
