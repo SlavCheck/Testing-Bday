@@ -195,7 +195,10 @@ socket.on("lobby:update", ({ players, gameType }) => {
     for (const [id, el] of Object.entries(houseCounts)) {
         if (el) el.textContent = counts[id];
     }
-    startGameButton.disabled = players.length === 0 || players.some(player => !player.house);
+    for (const [id, el] of Object.entries(classicCounts)) {
+        if (el) el.textContent = teamCounts[id];
+    }
+    startGameButton.disabled = players.length === 0 || players.some(player => currentAdminGameType === "classic" ? !player.team : !player.house);
     adminStatus.textContent = players.length
         ? "Факультеты распределены. Можно начинать!"
         : "Ожидаем игроков...";
