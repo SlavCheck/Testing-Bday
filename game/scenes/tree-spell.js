@@ -1,0 +1,2 @@
+"use strict";
+module.exports={id:"tree-spell",type:"tree_spell",title:"Зажги ёлку!",duration:120,points:30,background:"/assets/backgrounds/NewYearBG/hallway.png",text:"Каждый факультет должен собрать своё заклинание из пяти слов. Игроки получают слово и число. Передайте их капитану через чат — капитан должен ввести точную фразу в правильном порядке."};
