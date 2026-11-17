@@ -1650,7 +1650,8 @@ io.on("connection", (socket) => {
 
     socket.on(
         "admin:create_game",
-        () => {
+        ({ gameType } = {}) => {
+            const selectedGameType = gameType === "classic" ? "classic" : "harry-potter";
     
             const gameId =
                 generateGameCode();
@@ -1658,6 +1659,7 @@ io.on("connection", (socket) => {
             const game = {
     
                 id: gameId,
+                gameType: selectedGameType,
     
                 status: "lobby",
     
@@ -1706,7 +1708,7 @@ io.on("connection", (socket) => {
                 `Создана новая игра: ${gameId}`
             );
     
-            socket.emit("admin:game_created", { gameId, adminToken: game.adminToken });
+            socket.emit("admin:game_created", { gameId, gameType: game.gameType, adminToken: game.adminToken });
     
         }
     );
@@ -1730,7 +1732,7 @@ io.on("connection", (socket) => {
         socket.isAdmin = true;
         game.adminSocketId = socket.id;
         socket.emit("admin:game_restored", {
-            gameId: id, status: game.status, paused: game.status === "paused"
+            gameId: id, gameType: game.gameType || "harry-potter", status: game.status, paused: game.status === "paused"
         });
         broadcastLobbyUpdate(game);
     });
@@ -2136,11 +2138,10 @@ socket.on(
             broadcastLobbyUpdate(game);
 
 
-            game.currentScene =
-                snitchAnnouncement;
-
-            // Announcement runs on its own server timer, before testimony and voting.
-            startSceneTimer(game, snitchAnnouncement.duration);
+            const openingScene = game.gameType === "classic" ? introScene : snitchAnnouncement;
+            game.currentScene = openingScene;
+            // Both game modes use the existing shared server-side scene timer.
+            startSceneTimer(game, openingScene.duration);
 
             game.voting = {
                 active: false,
@@ -2159,7 +2160,7 @@ socket.on(
             ).emit(
                 "game:started",
                 {
-                    scene: snitchAnnouncement,
+                    scene: openingScene,
                     timer: game.sceneTimer
                 }
             );
