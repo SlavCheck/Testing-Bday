@@ -19,6 +19,9 @@ const potionRecipe = require("./game/scenes/potion-recipe");
 const potionIntro = require("./game/scenes/potion-intro");
 const potionNegativeIntro = require("./game/scenes/potion-negative-intro");
 const potionNegativeTest = require("./game/scenes/potion-negative-test");
+const treeIntro = require("./game/scenes/tree-intro");
+const treeSpell = require("./game/scenes/tree-spell");
+const treeFinale = require("./game/scenes/tree-finale");
 const { assignNextHouse } = require("./game/services/houses");
 
 const PORT = process.env.PORT || 3000;
@@ -42,6 +45,56 @@ const games = new Map();
 // --------------------------------------------------
 // HELPERS
 // --------------------------------------------------
+const TREE_SPELLS = {
+    gryffindor: "СМЕЛОСТЬ ВЕДЁТ К ПОБЕДЕ ВСЕГДА",
+    ravenclaw: "ЗНАНИЯ ПОМОГАЮТ НАЙТИ ПУТЬ ИСТИНЫ",
+    hufflepuff: "ДРУЖБА ОБЪЕДИНЯЕТ ВСЕХ НАС НАВСЕГДА",
+    slytherin: "ХИТРОСТЬ СПОСОБНА ОТКРЫВАТЬ ЛЮБЫЕ ДВЕРИ"
+};
+function normalizeSpell(text) {
+    return String(text || "").normalize("NFC").trim().replace(/\\s+/g, " ").toLocaleUpperCase("ru-RU");
+}
+function startTreeSpell(game) {
+    game.currentScene = treeSpell;
+    game.treeTeams = {};
+    for (const [house, phrase] of Object.entries(TREE_SPELLS)) {
+        const members = [...game.players.values()].filter(p => p.house === house);
+        if (!members.length) continue;
+        const captain = members[Math.floor(Math.random() * members.length)];
+        const recipients = members.filter(p => p.id !== captain.id);
+        const targets = recipients.length ? recipients : [captain];
+        const shuffled = phrase.split(" ").map((word, i) => ({ word, number: i + 1 }));
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        const assignments = {};
+        for (const member of members) assignments[member.id] = [];
+        shuffled.forEach((part, i) => assignments[targets[i % targets.length].id].push(part));
+        game.treeTeams[house] = { captainId: captain.id, assignments, solved: false };
+    }
+    startSceneTimer(game, treeSpell.duration);
+    io.to(`game_${game.id}`).emit("game:started", { scene: treeSpell, timer: game.sceneTimer });
+    for (const player of game.players.values()) {
+        const target = [...game.players.values()].find(p => p.id === player.id);
+        if (target?.socketId) io.to(target.socketId).emit("tree:role", treeRole(game, player));
+    }
+}
+function treeRole(game, player) {
+    const team = game.treeTeams?.[player.house];
+    if (!team) return { captain: false, parts: [], solved: false };
+    const captain = [...game.players.values()].find(p => p.id === team.captainId);
+    return { captain: team.captainId === player.id, captainName: captain?.nickname || "",
+        parts: team.assignments[player.id] || [], solved: team.solved };
+}
+function finishTreeGame(game) {
+    game.status = "finished";
+    if (game.sceneTimerTimeout) clearTimeout(game.sceneTimerTimeout);
+    game.sceneTimerTimeout = null;
+    game.sceneTimer = null;
+    const results = [...game.players.values()].map(p => ({nickname:p.nickname,house:p.house,score:p.score})).sort((a,b)=>b.score-a.score);
+    io.to(`game_${game.id}`).emit("game:finished", {results,houseScores:getHouseScores(game)});
+}
 function publicNegativePotionScene() {
     const { correctIds, ...safeScene } = potionNegativeTest;
     return safeScene;
@@ -558,6 +611,7 @@ function sendPlayerState(socket, game, player) {
             game.currentScene?.id === "potion-negative-test" ? publicNegativePotionScene() : game.currentScene,
         potionAnswer: player.potionAnswer || [],
         negativePotionAnswer: player.negativePotionAnswer || [],
+        treeRole: game.currentScene?.id === "tree-spell" ? treeRole(game, player) : null,
     
         sceneState: player.sceneState,
     
@@ -845,6 +899,26 @@ function moveToNextScene(game) {
         return;
     }
 
+    if (game.gameType !== "classic" && game.currentScene?.id === "potion-negative-test") {
+        game.currentScene = treeIntro;
+        startSceneTimer(game, treeIntro.duration);
+        io.to(`game_${game.id}`).emit("game:started", {scene:treeIntro,timer:game.sceneTimer});
+        return;
+    }
+    if (game.gameType !== "classic" && game.currentScene?.id === "tree-intro") {
+        startTreeSpell(game);
+        return;
+    }
+    if (game.gameType !== "classic" && game.currentScene?.id === "tree-spell") {
+        game.currentScene = treeFinale;
+        startSceneTimer(game, treeFinale.duration);
+        io.to(`game_${game.id}`).emit("game:started", {scene:treeFinale,timer:game.sceneTimer});
+        return;
+    }
+    if (game.gameType !== "classic" && game.currentScene?.id === "tree-finale") {
+        finishTreeGame(game);
+        return;
+    }
     if (game.sceneTimerTimeout) {
         clearTimeout(game.sceneTimerTimeout);
         game.sceneTimerTimeout = null;
@@ -2282,6 +2356,24 @@ socket.on(
     });
 
     // The recipe's correct IDs are never sent to players during the selection phase.
+    socket.on("tree:submit", ({ phrase } = {}) => {
+        if (!socket.gameId || typeof phrase !== "string" || phrase.length > 200) return;
+        const game = games.get(socket.gameId);
+        if (!game || game.status !== "playing" || game.currentScene?.id !== "tree-spell" ||
+            !game.sceneTimer || Date.now() >= game.sceneTimer.endsAt) return;
+        const player = [...game.players.values()].find(p => p.socketId === socket.id);
+        const team = player && game.treeTeams?.[player.house];
+        if (!team || team.captainId !== player.id || team.solved) return;
+        if (normalizeSpell(phrase) !== normalizeSpell(TREE_SPELLS[player.house])) {
+            socket.emit("tree:submit_result", {correct:false});
+            return;
+        }
+        team.solved = true;
+        for (const member of game.players.values()) if (member.house === player.house) member.score += treeSpell.points;
+        io.to(`game_${game.id}`).emit("tree:house_solved", {house:player.house});
+        socket.emit("tree:submit_result", {correct:true});
+    });
+
     socket.on("potion-negative:answer", ({ optionIds } = {}) => {
         if (!socket.gameId || !Array.isArray(optionIds) || optionIds.length > 2) return;
         const game = games.get(socket.gameId);
@@ -2346,7 +2438,10 @@ socket.on(
             "potion-recipe": potionRecipe,
             "potion-intro": potionIntro,
             "potion-negative-intro": potionNegativeIntro,
-            "potion-negative-test": potionNegativeTest
+            "potion-negative-test": potionNegativeTest,
+            "tree-intro": treeIntro,
+            "tree-spell": treeSpell,
+            "tree-finale": treeFinale
         };
         if (!Object.prototype.hasOwnProperty.call(allowed, sceneId)) return;
         if (game.sceneTimerTimeout) clearTimeout(game.sceneTimerTimeout);
@@ -2370,6 +2465,11 @@ socket.on(
                 player.flightCaughtWindows = new Set();
                 player.lastFlightClickAt = 0;
             }
+        }
+        if (sceneId === "tree-spell") {
+            startTreeSpell(game);
+            socket.emit("admin:jump_scene_result", {sceneId});
+            return;
         }
         startSceneTimer(game, game.currentScene.duration);
         io.to(`game_${game.id}`).emit("game:started", {
