@@ -536,6 +536,7 @@ function sendPlayerState(socket, game, player) {
     
         team: player.team,
         house: player.house,
+        gameType: game.gameType || "harry-potter",
         snitchAnswer: player.snitchAnswer || null,
         score: player.score,
     
@@ -1789,6 +1790,8 @@ io.on("connection", (socket) => {
                         gameId: normalizedGameId,
                         nickname: existingPlayer.nickname,
                         house: existingPlayer.house,
+                        team: existingPlayer.team,
+                        gameType: game.gameType || "harry-potter",
                         restored: true           // <-- важный флаг
                     });
 
@@ -1884,6 +1887,8 @@ io.on("connection", (socket) => {
                         gameId: normalizedGameId,
                         nickname: normalizedNick,
                         house: player.house,
+                        team: player.team,
+                        gameType: game.gameType || "harry-potter",
                         restored: false             // <-- новый игрок, а не восстановление
                     }
                 );
