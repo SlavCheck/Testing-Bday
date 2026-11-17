@@ -5,7 +5,7 @@ module.exports = {
   type: "garland_fire",
   title: "Сожги гирлянду!",
   duration: 45,
-  question: "Какое заклинание поможет зажечь волшебную гирлянду?",
+  question: "Какое заклинание поможет сжечь гирлянду?",
   options: [
     { id: "lumos", label: "Люмос" },
     { id: "incendio", label: "Инсендио" },
