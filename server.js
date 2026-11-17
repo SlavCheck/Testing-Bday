@@ -39,6 +39,10 @@ const games = new Map();
 // --------------------------------------------------
 // HELPERS
 // --------------------------------------------------
+function publicPotionScene() {
+    const { correctIds, ...safeScene } = potionRecipe;
+    return safeScene;
+}
 
 function startSceneTimer(game, duration) {
 
@@ -2248,10 +2252,6 @@ socket.on(
     });
 
     // The recipe's correct IDs are never sent to players during the selection phase.
-    function publicPotionScene() {
-        const { correctIds, ...safeScene } = potionRecipe;
-        return safeScene;
-    }
     socket.on("potion:answer", ({ ingredientIds } = {}) => {
         if (!socket.gameId || !Array.isArray(ingredientIds) || ingredientIds.length > 6) return;
         const game = games.get(socket.gameId);
