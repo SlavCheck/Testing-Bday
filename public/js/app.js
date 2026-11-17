@@ -2348,12 +2348,27 @@ function renderSnitchFlight(scene, timer) {
             snitch.classList.toggle("green", active);
             wasGreen = active;
         }
-        // Gently travel inside the centered play field, never across the whole screen.
+        // Quick, unpredictable darts with brief rests, contained inside the small arena.
+        // Keep the Snitch still during green windows so players can click accurately.
         const maxX = Math.max(0, arena.clientWidth - snitch.offsetWidth);
         const maxY = Math.max(0, arena.clientHeight - snitch.offsetHeight);
         const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        const x = maxX * (0.5 + (reducedMotion ? 0 : 0.46 * Math.sin(elapsed * 0.84)));
-        const y = maxY * (0.5 + (reducedMotion ? 0 : 0.44 * Math.sin(elapsed * 1.10 + 0.8)));
+        const hopDuration = 0.72;
+        const hop = Math.floor(elapsed / hopDuration);
+        const phase = (elapsed / hopDuration) - hop;
+        const randomAt = (step, salt) => {
+            const value = Math.sin((step + 1) * 127.1 + salt * 311.7) * 43758.5453;
+            return value - Math.floor(value);
+        };
+        const fromX = hop === 0 ? 0.5 : 0.12 + randomAt(hop - 1, 1) * 0.76;
+        const fromY = hop === 0 ? 0.5 : 0.12 + randomAt(hop - 1, 2) * 0.76;
+        const toX = 0.12 + randomAt(hop, 1) * 0.76;
+        const toY = 0.12 + randomAt(hop, 2) * 0.76;
+        // Dart in the first 130 ms, then pause; no full-screen flashing.
+        const t = Math.min(1, phase / (0.13 / hopDuration));
+        const ease = t * t * (3 - 2 * t);
+        const x = reducedMotion ? maxX / 2 : maxX * (fromX + (toX - fromX) * ease);
+        const y = reducedMotion ? maxY / 2 : maxY * (fromY + (toY - fromY) * ease);
         snitch.style.transform = `translate3d(${x}px, ${y}px, 0)`;
         if (remaining > 0) flightAnimationFrame = requestAnimationFrame(update);
     };
