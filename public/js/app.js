@@ -2310,9 +2310,12 @@ let savedSnitchAnswer = null;
 let flightAnimationFrame = null;
 let flightTimerEndsAt = 0;
 let flightClockOffset = 0;
+const snitchClickPositions = [];
 function stopSnitchFlight() {
     if (flightAnimationFrame !== null) cancelAnimationFrame(flightAnimationFrame);
     flightAnimationFrame = null;
+    snitchClickPositions.length = 0;
+    document.querySelectorAll(".snitch-score-popup").forEach(node => node.remove());
     document.getElementById("snitchFlight")?.classList.add("hidden");
 }
 function renderSnitchFlight(scene, timer) {
@@ -2329,8 +2332,14 @@ function renderSnitchFlight(scene, timer) {
     const red = "/assets/items/NewYearItems/Snitch_red.png";
     const green = "/assets/items/NewYearItems/Snitch_green.png";
     img.src = red;
-    snitch.onclick = () => {
+    snitch.onclick = (event) => {
         if (!isGamePaused && currentScene?.type === "snitch_flight") {
+            const rect = snitch.getBoundingClientRect();
+            snitchClickPositions.push({
+                x: event.clientX || rect.left + rect.width / 2,
+                y: event.clientY || rect.top + rect.height / 2,
+                at: Date.now()
+            });
             socket.emit("snitch:flight_click");
         }
     };
@@ -2377,8 +2386,18 @@ function renderSnitchFlight(scene, timer) {
     update();
 }
 socket.on("snitch:flight_result", ({ delta }) => {
-    const status = document.getElementById("snitchFlightStatus");
-    if (status) status.textContent = delta > 0 ? "+10 очков! Снитч пойман!" : "−5 очков! Снитч был красным.";
+    if (currentScene?.type !== "snitch_flight") return;
+    const click = snitchClickPositions.shift();
+    const snitch = document.getElementById("flyingSnitch");
+    const rect = snitch?.getBoundingClientRect();
+    const popup = document.createElement("span");
+    popup.className = "snitch-score-popup " + (delta > 0 ? "positive" : "negative");
+    popup.textContent = delta > 0 ? "+" + delta : String(delta);
+    popup.style.left = (click?.x ?? (rect ? rect.left + rect.width / 2 : innerWidth / 2)) + "px";
+    popup.style.top = (click?.y ?? (rect ? rect.top + rect.height / 2 : innerHeight / 2)) + "px";
+    popup.addEventListener("animationend", () => popup.remove(), { once: true });
+    document.body.appendChild(popup);
+    setTimeout(() => popup.remove(), 1400);
 });
 
 let snitchDialogueIndex = 0;
