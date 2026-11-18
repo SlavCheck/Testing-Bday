@@ -22,6 +22,8 @@ const potionNegativeTest = require("./game/scenes/potion-negative-test");
 const treeIntro = require("./game/scenes/tree-intro");
 const treeSpell = require("./game/scenes/tree-spell");
 const treeFinale = require("./game/scenes/tree-finale");
+const novelScript = require("./game/scenes/novel-script");
+const novelScenes = Object.fromEntries(novelScript.map(screen => [screen.number, {id:"novel-"+screen.number,type:"visual_novel",title:screen.title,screen, duration:Math.max(35,screen.beats.length*5)}]));
 const { assignNextHouse } = require("./game/services/houses");
 
 const PORT = process.env.PORT || 3000;
@@ -838,7 +840,38 @@ function awardVotingPoints(game, scene, winner) {
  * 2. game.currentScene.nextSceneId — общий переход сцены
  * 3. если ничего нет — игра завершена
  */
+function startNovelScene(game, number) {
+    const scene = novelScenes[number];
+    game.currentScene = scene;
+    startSceneTimer(game, scene.duration);
+    io.to(`game_${game.id}`).emit("game:started", {scene,timer:game.sceneTimer});
+}
+function startHpMiniGame(game, scene) {
+    game.currentScene = scene;
+    if (scene.id === "snitch-flight") game.snitchFlightStartedAt = Date.now();
+    if (scene.id === "garland-fire") for (const p of game.players.values()) p.garlandAnswer = null;
+    if (scene.id === "invisibility-cloak") for (const p of game.players.values()) p.cloakAnswer = null;
+    if (scene.id === "potion-recipe") for (const p of game.players.values()) p.potionAnswer = [];
+    if (scene.id === "potion-negative-test") for (const p of game.players.values()) p.negativePotionAnswer = [];
+    startSceneTimer(game, scene.duration);
+    const safe = scene.id === "potion-recipe" ? publicPotionScene() : scene.id === "potion-negative-test" ? publicNegativePotionScene() : scene;
+    io.to(`game_${game.id}`).emit("game:started", {scene:safe,timer:game.sceneTimer});
+}
 function moveToNextScene(game) {
+    if (game.gameType !== "classic" && game.currentScene?.type === "visual_novel") {
+        const number = game.currentScene.screen.number;
+        const mini = {5:snitchScene,7:snitchFlight,9:garlandFire,11:invisibilityCloak,13:potionRecipe,15:potionNegativeTest};
+        const next = {1:3,3:4,4:5,6:7,8:9,10:11,12:13,14:15,16:17};
+        if (mini[number]) {startHpMiniGame(game,mini[number]);return;}
+        if (number === 17) {startTreeSpell(game);return;}
+        if (number === 18) {finishTreeGame(game);return;}
+        if (next[number]) {startNovelScene(game,next[number]);return;}
+    }
+    if (game.gameType !== "classic") {
+        const afterGame = {"snitch-theft":6,"snitch-flight":8,"garland-fire":10,"invisibility-cloak":12,"potion-recipe":14,"potion-negative-test":16,"tree-spell":18};
+        const nextNumber = afterGame[game.currentScene?.id];
+        if (nextNumber) {startNovelScene(game,nextNumber);return;}
+    }
     if (game.gameType !== "classic" && game.currentScene?.id === "snitch-announcement") {
         game.currentScene = snitchScene;
         startSceneTimer(game, snitchScene.duration);
@@ -2263,7 +2296,7 @@ socket.on(
             broadcastLobbyUpdate(game);
 
 
-            const openingScene = game.gameType === "classic" ? introScene : snitchAnnouncement;
+            const openingScene = game.gameType === "classic" ? introScene : novelScenes[1];
             game.currentScene = openingScene;
             // Both game modes use the existing shared server-side scene timer.
             startSceneTimer(game, openingScene.duration);
@@ -2441,7 +2474,8 @@ socket.on(
             "potion-negative-test": potionNegativeTest,
             "tree-intro": treeIntro,
             "tree-spell": treeSpell,
-            "tree-finale": treeFinale
+            "tree-finale": treeFinale,
+            ...Object.fromEntries(Object.entries(novelScenes).map(([n,scene]) => [scene.id,scene]))
         };
         if (!Object.prototype.hasOwnProperty.call(allowed, sceneId)) return;
         if (game.sceneTimerTimeout) clearTimeout(game.sceneTimerTimeout);
