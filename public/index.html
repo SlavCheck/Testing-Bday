@@ -235,6 +235,14 @@
         <h2 id="treeRoleTitle"></h2>
         <p id="treeRoleInfo"></p>
         <div id="treeWordParts" class="tree-word-parts"></div>
+        <div class="tree-house-chat">
+          <h3>💬 Чат факультета</h3>
+          <div id="treeChatMessages" class="tree-chat-messages" aria-live="polite"></div>
+          <form id="treeChatForm">
+            <input id="treeChatInput" type="text" maxlength="250" placeholder="Сообщение капитану и факультету" required autocomplete="off">
+            <button type="submit">Отправить</button>
+          </form>
+        </div>
         <form id="treeSpellForm" class="hidden">
           <label for="treeSpellInput">Введите заклинание в правильном порядке</label>
           <input id="treeSpellInput" type="text" autocomplete="off" maxlength="200" required>
