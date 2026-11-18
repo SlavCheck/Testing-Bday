@@ -1,2 +1,2 @@
 "use strict";
-module.exports={id:"tree-finale",type:"tree_finale",title:"Новый год спасён!",duration:12,background:"/assets/backgrounds/NewYearBG/hallway.png",text:"Дамблдор: «Ёлка загорелась! Новый год спасён! Но главное — мы сделали это вместе! Каждый факультет внёс свой вклад. И сейчас я объявляю победителей Турнира Четырёх Факультетов!»"};
+module.exports={id:"tree-finale",type:"tree_finale",title:"Новый год спасён!",duration:12,background:"/assets/backgrounds/NewYearBG/hallway.png",text:"Альберт Деплоймор: «Ёлка загорелась! Новый год спасён! Но главное — мы сделали это вместе! Каждый факультет внёс свой вклад. И сейчас я объявляю победителей Турнира Четырёх Факультетов!»"};
