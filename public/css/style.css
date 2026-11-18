@@ -3347,3 +3347,16 @@ button:disabled {
 .vn-join-placeholder{margin:12px auto;padding:14px;border:2px dashed #9bacc9;border-radius:12px;background:#1b2d48;color:#dbe5f9;max-width:500px;font:600 14px system-ui,sans-serif}
 .vn-hat-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;margin:12px auto;padding:16px;border:2px dashed #d1b578;border-radius:12px;max-width:350px;font-size:56px;background:#293246}
 .vn-hat-placeholder span{font:600 14px/1.4 system-ui,sans-serif;color:#ffe4a6;text-align:center}
+
+.vn-nav{display:flex;align-items:center;gap:10px}
+#vnPrev{border:1px solid #9aaac5;border-radius:8px;padding:12px 18px;background:#263b59;color:#e7efff;font:700 16px system-ui,sans-serif;cursor:pointer}
+#vnPrev:disabled{opacity:.4;cursor:default}
+.vn-vote{border-top:1px solid #6f7790;padding-top:10px;margin-top:12px}
+.vn-vote.hidden{display:none!important}
+.vn-vote h3{margin:0 0 10px;color:#f6dba6;font:700 16px system-ui,sans-serif}
+.vn-vote-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.vn-vote-options button{padding:12px 6px;border:1px solid #b5a47e;border-radius:8px;background:#253954;color:#fff;font:600 15px system-ui,sans-serif;cursor:pointer}
+.vn-vote-options button.selected{background:#d0a651;color:#19253a;border-color:#ffebad}
+#vnVoteStatus{font:13px system-ui,sans-serif;color:#d6e3ff;margin:9px 0 0}
+.visual-novel:has(.vn-vote:not(.hidden)) .vn-dialogue{max-height:55vh;overflow:auto}
+@media(max-width:620px){.vn-vote-options{grid-template-columns:repeat(2,minmax(0,1fr))}.vn-nav{gap:5px}#vnPrev,#vnNext{padding:10px;font-size:13px}}
