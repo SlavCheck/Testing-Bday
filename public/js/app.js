@@ -1604,6 +1604,7 @@ socket.on(
         potionAnswer,
         negativePotionAnswer,
         treeRole,
+        treeChat,
         score,
         status,
         scene,
@@ -1772,6 +1773,8 @@ socket.on(
         if (scene.type === "tree_spell") {
             treeCurrentRole = treeRole;
             renderTreeSpell(treeRole);
+            document.getElementById("treeChatMessages").replaceChildren();
+            for(const entry of treeChat || []) appendTreeChat(entry);
             return;
         }
         if (scene.type === "potion_negative_test") {
@@ -2401,6 +2404,23 @@ document.getElementById("vnNext")?.addEventListener("click", () => {
     }
 });
 let treeCurrentRole = null;
+function appendTreeChat(entry) {
+    const list = document.getElementById("treeChatMessages");
+    const row = document.createElement("p");
+    const name = document.createElement("strong");
+    name.textContent = entry.nickname + ": ";
+    row.append(name,document.createTextNode(entry.text));
+    list.appendChild(row);
+    list.scrollTop = list.scrollHeight;
+}
+socket.on("tree:chat_message", entry => {if(currentScene?.type === "tree_spell") appendTreeChat(entry);});
+document.getElementById("treeChatForm")?.addEventListener("submit", event => {
+    event.preventDefault();
+    if(currentScene?.type !== "tree_spell" || isGamePaused) return;
+    const input = document.getElementById("treeChatInput");
+    if(input.value.trim()) socket.emit("tree:chat_send",{text:input.value});
+    input.value = "";
+});
 function renderTreeSpell(role) {
     stopSnitchFlight();
     for (const id of ["snitchMystery", "garlandFire", "cloakSearch", "potionRecipe", "potionNegativeTest"])
@@ -2883,7 +2903,7 @@ socket.on(
         document.getElementById("potionNegativeTest")?.classList.add("hidden");
         document.getElementById("treeSpell")?.classList.add("hidden");
         document.getElementById("visualNovel")?.classList.add("hidden");
-        if (scene.type === "tree_spell") { treeCurrentRole = null; document.getElementById("treeSpellInput").value = ""; }
+        if (scene.type === "tree_spell") { treeCurrentRole = null; document.getElementById("treeSpellInput").value = ""; document.getElementById("treeChatMessages").replaceChildren(); }
         if (scene.type === "potion_negative_test") { negativePotionSelectedIds = []; negativePotionOrder = []; }
         if (potionPhaseInterval) { clearInterval(potionPhaseInterval); potionPhaseInterval = null; }
         if (scene.type === "potion_recipe") potionSelectedIds = [];
