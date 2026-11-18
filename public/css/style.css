@@ -3316,3 +3316,22 @@ button:disabled {
 #treeSpellForm.hidden{display:none!important}
 #treeSpellInput{padding:14px;border-radius:9px;font:inherit}
 #treeSpellForm button{padding:14px;border-radius:10px;background:#cfa957;color:#192a22;font:inherit;font-weight:700;cursor:pointer}
+
+/* 2027 holiday graphic novel: all assets are explicitly labeled placeholders */
+.visual-novel{position:fixed;inset:0;z-index:45;display:flex;flex-direction:column;justify-content:space-between;color:#fff;font-family:Georgia,serif;background:#121c31;overflow:hidden}
+.visual-novel.hidden{display:none!important}
+.vn-background{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 38%,#40577a 0%,#18233b 57%,#0a101f 100%);display:flex;align-items:flex-start;justify-content:center;padding:100px 20px 0;pointer-events:none}
+.vn-background span{border:2px dashed #91a8c8;padding:16px 22px;border-radius:12px;color:#c9d9ec;font:600 15px/1.4 system-ui,sans-serif;text-align:center;max-width:650px}
+.vn-top{position:relative;z-index:2;display:flex;justify-content:space-between;gap:16px;padding:24px 30px;background:linear-gradient(#0b1427dd,transparent);font:600 15px system-ui,sans-serif}
+.vn-characters{position:relative;z-index:1;display:flex;justify-content:center;align-items:flex-end;gap:12px;flex:1;min-height:0;padding:12px 20px 0}
+.vn-character{display:flex;align-items:center;justify-content:center;white-space:pre-line;text-align:center;font:700 15px/1.5 system-ui,sans-serif;color:#d4d7e5;border:2px dashed #8592ad;border-radius:70px 70px 12px 12px;background:linear-gradient(#3d4663,#1e2841);width:min(22vw,190px);height:clamp(130px,30vh,290px);opacity:.55;transition:opacity .2s,transform .2s}
+.vn-character.active{opacity:1;border-color:#ffd985;color:#fff3cc;transform:translateY(-8px);box-shadow:0 0 24px #f5ca7a55}
+.vn-prop{position:relative;z-index:2;align-self:center;padding:8px 18px;border:2px dashed #e8c77b;border-radius:10px;background:#302b35dd;color:#ffdc8c;font:600 14px system-ui,sans-serif}
+.vn-prop:empty{display:none}
+.vn-dialogue{position:relative;z-index:3;margin:12px auto 24px;width:min(1100px,94vw);min-height:180px;background:#091224ed;border:2px solid #c7a566;border-radius:14px;padding:20px 26px;box-shadow:0 12px 45px #0009}
+.vn-speaker{color:#f5d18a;font:700 21px system-ui,sans-serif;margin-bottom:10px}
+.vn-text{font-size:clamp(17px,2.1vw,24px);line-height:1.5;min-height:65px}
+.vn-controls{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-top:14px;font:14px system-ui,sans-serif;color:#a8bad1}
+#vnNext{border:1px solid #f2d69c;border-radius:8px;padding:12px 22px;background:#b58a44;color:#111e2e;font:700 16px system-ui,sans-serif;cursor:pointer}
+#vnNext:disabled{opacity:.5;cursor:default}
+@media(max-width:620px){.vn-top{padding:15px;font-size:12px}.vn-background{padding-top:80px}.vn-background span{font-size:12px}.vn-characters{gap:5px;padding:0 8px}.vn-character{font-size:10px;width:23vw;height:clamp(95px,22vh,175px)}.vn-dialogue{margin:8px auto 12px;padding:15px;min-height:190px}.vn-speaker{font-size:17px}.vn-text{font-size:17px}.vn-prop{font-size:11px}}
