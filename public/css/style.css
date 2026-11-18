@@ -3343,3 +3343,7 @@ button:disabled {
 #treeChatForm{display:flex;gap:8px;margin-top:10px}
 #treeChatInput{flex:1;min-width:0;padding:10px;border-radius:7px}
 #treeChatForm button{border:0;border-radius:7px;padding:10px;background:#cfa957;color:#1c2c21;font-weight:700}
+
+.vn-join-placeholder{margin:12px auto;padding:14px;border:2px dashed #9bacc9;border-radius:12px;background:#1b2d48;color:#dbe5f9;max-width:500px;font:600 14px system-ui,sans-serif}
+.vn-hat-placeholder{display:flex;flex-direction:column;align-items:center;gap:8px;margin:12px auto;padding:16px;border:2px dashed #d1b578;border-radius:12px;max-width:350px;font-size:56px;background:#293246}
+.vn-hat-placeholder span{font:600 14px/1.4 system-ui,sans-serif;color:#ffe4a6;text-align:center}
