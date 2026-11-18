@@ -1,15 +1,13 @@
 "use strict";
 module.exports = {
  id:"potion-negative-test",type:"potion_negative_test",
- title:"А что, если?..",duration:45,points:30,
- question:"Выбери два негативных теста для зелья удачи.",
+ title:"Негативное тестирование зелья",duration:30,points:30,
+ question:"Документация: действие зелья длится ровно один час; через два часа возможна сонливость; запрещено смешивать зелье с алкоголем. Выберите два негативных сценария.",
  options:[
- {id:"follow_instructions",label:"Выпить зелье по инструкции"},
- {id:"unknown_ingredient",label:"Добавить в зелье неизвестный ингредиент"},
- {id:"check_color",label:"Проверить цвет готового зелья"},
- {id:"expired_potion",label:"Выпить зелье с истёкшим сроком годности"},
- {id:"check_aroma",label:"Проверить аромат зелья"},
- {id:"exact_recipe",label:"Приготовить зелье точно по рецепту"}
+ {id:"thirty_minutes",label:"А. Проверить, действует ли удача через 30 минут"},
+ {id:"two_hours_luck",label:"Б. Проверить, действует ли удача через 2 часа"},
+ {id:"two_hours_sleep",label:"В. Проверить, появляется ли сонливость через 2 часа"},
+ {id:"mix_alcohol",label:"Г. Проверить, что произойдёт при смешивании зелья с алкоголем"}
  ],
- correctIds:["unknown_ingredient","expired_potion"]
+ correctIds:["two_hours_luck","mix_alcohol"]
 };
