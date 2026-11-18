@@ -3335,3 +3335,11 @@ button:disabled {
 #vnNext{border:1px solid #f2d69c;border-radius:8px;padding:12px 22px;background:#b58a44;color:#111e2e;font:700 16px system-ui,sans-serif;cursor:pointer}
 #vnNext:disabled{opacity:.5;cursor:default}
 @media(max-width:620px){.vn-top{padding:15px;font-size:12px}.vn-background{padding-top:80px}.vn-background span{font-size:12px}.vn-characters{gap:5px;padding:0 8px}.vn-character{font-size:10px;width:23vw;height:clamp(95px,22vh,175px)}.vn-dialogue{margin:8px auto 12px;padding:15px;min-height:190px}.vn-speaker{font-size:17px}.vn-text{font-size:17px}.vn-prop{font-size:11px}}
+
+.tree-house-chat{margin:20px auto;max-width:680px;text-align:left;border:1px solid #8aab98;border-radius:12px;padding:12px;background:#102e28}
+.tree-house-chat h3{margin:0 0 10px}
+.tree-chat-messages{height:140px;overflow:auto;background:#091b18;padding:8px 12px;border-radius:8px}
+.tree-chat-messages p{margin:6px 0;font:14px/1.4 system-ui,sans-serif;overflow-wrap:anywhere}
+#treeChatForm{display:flex;gap:8px;margin-top:10px}
+#treeChatInput{flex:1;min-width:0;padding:10px;border-radius:7px}
+#treeChatForm button{border:0;border-radius:7px;padding:10px;background:#cfa957;color:#1c2c21;font-weight:700}
