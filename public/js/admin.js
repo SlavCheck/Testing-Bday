@@ -60,10 +60,10 @@ const playerCountElement =
 
 
 const HOUSE_NAMES = {
-    gryffindor: "🦁 Гриффиндор",
-    slytherin: "🐍 Слизерин",
-    ravenclaw: "🦅 Когтевран",
-    hufflepuff: "🦡 Пуффендуй"
+    gryffindor: "🦁 Гриффиндев",
+    slytherin: "🐍 Фичерин",
+    ravenclaw: "🦅 Кодтевран",
+    hufflepuff: "🦡 Пуффентест"
 };
 const houseCounts = Object.fromEntries(
     Object.keys(HOUSE_NAMES).map(id => [id, document.getElementById(id + "Count")])
@@ -141,7 +141,7 @@ const createClassicGameButton = document.getElementById("createClassicGameButton
 const adminGameTypeLabel = document.getElementById("adminGameTypeLabel");
 const GAME_MODE_LABELS = {
     classic: "🚀 Star Test Quest",
-    "harry-potter": "⚡ Гарри Поттер: Битва за Новый год"
+    "harry-potter": "⚡ Гаррет Поттерн Поттер: Битва за Новый год"
 };
 function createGameOfType(gameType) {
     createGameButton.disabled = true;
