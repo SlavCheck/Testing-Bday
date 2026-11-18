@@ -259,10 +259,10 @@ const teamStatus =
 
 
 const HOUSE_NAMES = {
-    gryffindor: "🦁 Гриффиндор",
-    slytherin: "🐍 Слизерин",
-    ravenclaw: "🦅 Когтевран",
-    hufflepuff: "🦡 Пуффендуй"
+    gryffindor: "🦁 Гриффиндев",
+    slytherin: "🐍 Фичерин",
+    ravenclaw: "🦅 Кодтевран",
+    hufflepuff: "🦡 Пуффентест"
 };
 const CLASSIC_TEAM_NAMES = {
     strategist: "📋 Стратеги",
@@ -2379,7 +2379,7 @@ function renderVisualNovel(scene, preserve = false) {
     document.getElementById("visualNovel").classList.remove("hidden");
     document.getElementById("vnAct").textContent = "ЭКРАН " + screen.number + " / 18";
     document.getElementById("vnSceneTitle").textContent = screen.title;
-    document.getElementById("vnBackgroundLabel").textContent = "ФОН (заглушка): " + (screen.background || "Хогвартс");
+    document.getElementById("vnBackgroundLabel").textContent = "ФОН (заглушка): " + (screen.background || "Багвартс");
     const characters = document.getElementById("vnCharacters");
     characters.replaceChildren();
     const beat = screen.beats[vnBeatIndex];
@@ -2392,7 +2392,7 @@ function renderVisualNovel(scene, preserve = false) {
         characters.appendChild(character);
     }
     const prop = document.getElementById("vnProp");
-    const props = {2:"Распределяющая шляпа",4:"Пустая витрина / Золотой снитч",5:"Золотой снитч",7:"Летающий снитч",8:"Погасшая ёлка",9:"Новогодняя гирлянда",10:"Обгоревшая гирлянда",11:"Мантия-невидимка",12:"Котёл",13:"Котёл с зельем",14:"Флакон зелья",15:"Книга требований",16:"Журнал обновлений",17:"Тёмная ёлка / четыре герба",18:"Горящая ёлка / Кубок"};
+    const props = {2:"Шляпа Сортировочная 2.0",4:"Пустая витрина / Золотой снитч",5:"Золотой снитч",7:"Летающий снитч",8:"Погасшая ёлка",9:"Новогодняя гирлянда",10:"Обгоревшая гирлянда",11:"Мантия-невидимка",12:"Котёл",13:"Котёл с зельем",14:"Флакон зелья",15:"Книга требований",16:"Журнал обновлений",17:"Тёмная ёлка / четыре герба",18:"Горящая ёлка / Кубок"};
     prop.textContent = props[screen.number] ? "ПРЕДМЕТ (заглушка): " + props[screen.number] : "";
     document.getElementById("vnSpeaker").textContent = beat?.speaker || "Рассказчик";
     document.getElementById("vnText").textContent = beat?.text || "История продолжается...";
@@ -3667,7 +3667,7 @@ socket.on(
         resultsList.innerHTML = "";
         if (correctSuspectId === "ron" && !houseScores) {
             const answer = document.createElement("p");
-            answer.textContent = "Итак, вор — Рон! Снитч найден и возвращён. Но это только начало! Первое испытание Турнира — поймать снитч!";
+            answer.textContent = "Итак, вор — Рональд Рандомли! Снитч найден и возвращён. Но это только начало! Первое испытание Турнира — поймать снитч!";
             resultsList.appendChild(answer);
             return;
         }
@@ -3677,8 +3677,8 @@ socket.on(
             heading.textContent = "🏆 Турнир Четырёх Факультетов — итоговый рейтинг";
             resultsList.appendChild(heading);
             const names = {
-                gryffindor: "🦁 Гриффиндор", slytherin: "🐍 Слизерин",
-                ravenclaw: "🦅 Когтевран", hufflepuff: "🦡 Пуффендуй"
+                gryffindor: "🦁 Гриффиндев", slytherin: "🐍 Фичерин",
+                ravenclaw: "🦅 Кодтевран", hufflepuff: "🦡 Пуффентест"
             };
             const sorted = Object.entries(houseScores).sort((a, b) => b[1] - a[1]);
             for (const [house, score] of sorted) {
@@ -3702,7 +3702,7 @@ socket.on(
             }
             if (correctSuspectId) {
                 const answer = document.createElement("p");
-                answer.textContent = "Итак, вор — Рон! Снитч найден и возвращён. Но это только начало! Первое испытание Турнира — поймать снитч!";
+                answer.textContent = "Итак, вор — Рональд Рандомли! Снитч найден и возвращён. Но это только начало! Первое испытание Турнира — поймать снитч!";
                 resultsList.appendChild(answer);
             }
             return;
