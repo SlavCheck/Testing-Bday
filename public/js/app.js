@@ -3640,6 +3640,20 @@ socket.on(
                 row.textContent = `${names[house] || house}: ${score} очков`;
                 resultsList.appendChild(row);
             }
+            const winner = sorted[0];
+            if (winner) {
+                const win = document.createElement("h2");
+                win.textContent = "🏆 Победитель: " + (names[winner[0]] || winner[0]);
+                resultsList.prepend(win);
+            }
+            const personal = document.createElement("h3");
+            personal.textContent = "Личные результаты";
+            resultsList.appendChild(personal);
+            for (const player of results || []) {
+                const line = document.createElement("p");
+                line.textContent = player.nickname + " — " + player.score + " очков";
+                resultsList.appendChild(line);
+            }
             if (correctSuspectId) {
                 const answer = document.createElement("p");
                 answer.textContent = "Итак, вор — Рон! Снитч найден и возвращён. Но это только начало! Первое испытание Турнира — поймать снитч!";
