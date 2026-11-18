@@ -24,7 +24,7 @@ const treeSpell = require("./game/scenes/tree-spell");
 const treeFinale = require("./game/scenes/tree-finale");
 const novelScript = require("./game/scenes/novel-script");
 // Each minigame interrupts its own story screen between introduction and aftermath.
-const NOVEL_SPLITS = {7:6,9:3,11:3,13:4,15:3,17:6};
+const NOVEL_SPLITS = {7:6,9:4,11:4,13:4,15:3,17:6};
 const novelScenes = Object.fromEntries(novelScript.map(screen => [screen.number, {
     id:"novel-"+screen.number,type:"visual_novel",title:screen.title,
     screen:{...screen,beats: NOVEL_SPLITS[screen.number] == null ? screen.beats : screen.beats.slice(0,NOVEL_SPLITS[screen.number])},
@@ -60,10 +60,10 @@ const games = new Map();
 // HELPERS
 // --------------------------------------------------
 const TREE_SPELLS = {
-    gryffindor: "СМЕЛОСТЬ ВЕДЁТ К ПОБЕДЕ ВСЕГДА",
-    ravenclaw: "ЗНАНИЯ ПОМОГАЮТ НАЙТИ ПУТЬ ИСТИНЫ",
-    hufflepuff: "ДРУЖБА ОБЪЕДИНЯЕТ ВСЕХ НАС НАВСЕГДА",
-    slytherin: "ХИТРОСТЬ СПОСОБНА ОТКРЫВАТЬ ЛЮБЫЕ ДВЕРИ"
+    gryffindor: "СМЕЛОСТЬ СПАСАЕТ НАШ НОВОГОДНИЙ РЕЛИЗ",
+    ravenclaw: "ЗНАНИЯ ПОМОГАЮТ ИСПРАВИТЬ ЛЮБЫЕ ОШИБКИ",
+    hufflepuff: "ВМЕСТЕ МЫ НАЙДЁМ ВСЕ БАГИ",
+    slytherin: "ХИТРОСТЬ ПРЕВРАЩАЕТ БАГИ В ФИЧИ"
 };
 function normalizeSpell(text) {
     return String(text || "").normalize("NFC").trim().replace(/\\s+/g, " ").toLocaleUpperCase("ru-RU");
