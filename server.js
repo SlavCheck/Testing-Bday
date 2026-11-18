@@ -623,7 +623,8 @@ function sendPlayerState(socket, game, player) {
     
         status: game.status,
     
-        scene: game.currentScene?.id === "potion-recipe" ? publicPotionScene() :
+        scene: game.currentScene?.id === "snitch-theft" && game.gameType !== "classic" ? {...snitchScene,novelVoting:true,screen:novelScript[4]} :
+            game.currentScene?.id === "potion-recipe" ? publicPotionScene() :
             game.currentScene?.id === "potion-negative-test" ? publicNegativePotionScene() : game.currentScene,
         potionAnswer: player.potionAnswer || [],
         negativePotionAnswer: player.negativePotionAnswer || [],
@@ -864,6 +865,7 @@ function startNovelScene(game, number, after = false) {
 function startHpMiniGame(game, scene) {
     game.currentScene = scene;
     if (scene.id === "snitch-flight") game.snitchFlightStartedAt = Date.now();
+    if (scene.id === "potion-recipe") game.potionStartedAt = Date.now();
     if (scene.id === "snitch-theft") for (const p of game.players.values()) p.snitchAnswer = null;
     if (scene.id === "garland-fire") for (const p of game.players.values()) p.garlandAnswer = null;
     if (scene.id === "invisibility-cloak") for (const p of game.players.values()) p.cloakAnswer = null;
