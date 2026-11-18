@@ -1766,6 +1766,10 @@ socket.on(
          * 6️⃣ Сохраняем сцену в глобальную переменную
          * ------------------------------------------------- */
         currentScene = scene;
+        if (scene.novelVoting) {
+            renderNovelVoting(scene, snitchAnswer);
+            return;
+        }
         if (scene.type === "visual_novel") {
             renderVisualNovel(scene);
             return;
@@ -2364,7 +2368,7 @@ let vnBeatIndex = 0;
 let vnSceneId = null;
 function renderVisualNovel(scene, preserve = false) {
     const screen = scene.screen;
-    if (!preserve || vnSceneId !== scene.id) vnBeatIndex = 0;
+    if (!preserve || vnSceneId !== scene.id) vnBeatIndex = scene.novelVoting ? Math.max(0,screen.beats.length-1) : 0;
     vnSceneId = scene.id;
     stopSnitchFlight();
     for (const id of ["snitchMystery","garlandFire","cloakSearch","potionRecipe","potionNegativeTest","treeSpell"])
@@ -2395,14 +2399,42 @@ function renderVisualNovel(scene, preserve = false) {
     document.getElementById("vnProgress").textContent = (vnBeatIndex + 1) + " / " + screen.beats.length;
     document.getElementById("vnNext").textContent = vnBeatIndex < screen.beats.length - 1 ? "Далее ▸" : "Ожидаем следующую сцену…";
     document.getElementById("vnNext").disabled = vnBeatIndex >= screen.beats.length - 1;
+    document.getElementById("vnPrev").disabled = vnBeatIndex === 0;
+    document.getElementById("vnVote").classList.toggle("hidden", !scene.novelVoting);
 }
+document.getElementById("vnPrev")?.addEventListener("click", () => {
+    if (currentScene?.type !== "visual_novel" && !currentScene?.novelVoting) return;
+    if (vnBeatIndex > 0) { vnBeatIndex--; renderVisualNovel(currentScene,true); }
+});
 document.getElementById("vnNext")?.addEventListener("click", () => {
-    if (currentScene?.type !== "visual_novel") return;
+    if (currentScene?.type !== "visual_novel" && !currentScene?.novelVoting) return;
     if (vnBeatIndex < currentScene.screen.beats.length - 1) {
         vnBeatIndex++;
         renderVisualNovel(currentScene, true);
     }
 });
+function renderNovelVoting(scene, answer = null) {
+    savedSnitchAnswer = answer;
+    renderVisualNovel(scene);
+    const options = document.getElementById("vnVoteOptions");
+    options.replaceChildren();
+    for (const suspect of scene.suspects) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = suspect.name;
+        button.dataset.suspect = suspect.id;
+        button.classList.toggle("selected",savedSnitchAnswer === suspect.id);
+        button.setAttribute("aria-pressed",String(savedSnitchAnswer === suspect.id));
+        button.addEventListener("click", () => {
+            if (isGamePaused || currentScene?.id !== "snitch-theft") return;
+            socket.emit("snitch:answer",{suspectId:suspect.id});
+        });
+        options.appendChild(button);
+    }
+    document.getElementById("vnVoteStatus").textContent = savedSnitchAnswer
+        ? "Ответ сохранён. Можно изменить до окончания минуты."
+        : "Обсудите показания и выберите подозреваемого.";
+}
 let treeCurrentRole = null;
 function appendTreeChat(entry) {
     const list = document.getElementById("treeChatMessages");
@@ -2862,6 +2894,15 @@ function renderSnitchMystery(scene, answer = null) {
 socket.on("snitch:answer_saved", ({ suspectId }) => {
     if (currentScene?.type === "snitch_mystery") {
         savedSnitchAnswer = suspectId;
+        if (currentScene.novelVoting) {
+            document.querySelectorAll("#vnVoteOptions button").forEach(button => {
+                const selected = button.dataset.suspect === suspectId;
+                button.classList.toggle("selected",selected);
+                button.setAttribute("aria-pressed",String(selected));
+            });
+            document.getElementById("vnVoteStatus").textContent = "Ответ сохранён. Можно изменить до окончания минуты.";
+            return;
+        }
         const buttons = document.querySelectorAll("#snitchSuspects .snitch-suspect");
         currentScene.suspects.forEach((suspect, i) => {
             if (buttons[i]) {
@@ -2939,6 +2980,11 @@ socket.on(
         // Показываем игровой экран
         gameScreen.classList.remove("hidden");
 
+        if (scene.novelVoting) {
+            hideSceneTransition();
+            renderNovelVoting(scene);
+            return;
+        }
         if (scene.type === "visual_novel") {
             hideSceneTransition();
             renderVisualNovel(scene);
