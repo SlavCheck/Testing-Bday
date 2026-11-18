@@ -1765,6 +1765,10 @@ socket.on(
          * 6️⃣ Сохраняем сцену в глобальную переменную
          * ------------------------------------------------- */
         currentScene = scene;
+        if (scene.type === "visual_novel") {
+            renderVisualNovel(scene);
+            return;
+        }
         if (scene.type === "tree_spell") {
             treeCurrentRole = treeRole;
             renderTreeSpell(treeRole);
@@ -2353,6 +2357,49 @@ function stopSnitchFlight() {
     document.querySelectorAll(".snitch-score-popup").forEach(node => node.remove());
     document.getElementById("snitchFlight")?.classList.add("hidden");
 }
+let vnBeatIndex = 0;
+let vnSceneId = null;
+function renderVisualNovel(scene, preserve = false) {
+    const screen = scene.screen;
+    if (!preserve || vnSceneId !== scene.id) vnBeatIndex = 0;
+    vnSceneId = scene.id;
+    stopSnitchFlight();
+    for (const id of ["snitchMystery","garlandFire","cloakSearch","potionRecipe","potionNegativeTest","treeSpell"])
+        document.getElementById(id)?.classList.add("hidden");
+    dialoguePanel?.classList.add("hidden");
+    bugSearch?.classList.add("hidden");
+    charactersLayer?.replaceChildren();
+    document.getElementById("visualNovel").classList.remove("hidden");
+    document.getElementById("vnAct").textContent = "ЭКРАН " + screen.number + " / 18";
+    document.getElementById("vnSceneTitle").textContent = screen.title;
+    document.getElementById("vnBackgroundLabel").textContent = "ФОН (заглушка): " + (screen.background || "Хогвартс");
+    const characters = document.getElementById("vnCharacters");
+    characters.replaceChildren();
+    const beat = screen.beats[vnBeatIndex];
+    const active = beat?.speaker || "";
+    const speakers = new Set([...(screen.characters || []), ...screen.beats.filter(b => b.speaker !== "Система" && b.speaker !== "Событие" && b.speaker !== "Рассказчик").map(b=>b.speaker)]);
+    for (const name of speakers) {
+        const character = document.createElement("div");
+        character.className = "vn-character" + (name === active ? " active" : "");
+        character.textContent = "ПЕРСОНАЖ\n" + name;
+        characters.appendChild(character);
+    }
+    const prop = document.getElementById("vnProp");
+    const props = {2:"Распределяющая шляпа",4:"Пустая витрина / Золотой снитч",5:"Золотой снитч",7:"Летающий снитч",8:"Погасшая ёлка",9:"Новогодняя гирлянда",10:"Обгоревшая гирлянда",11:"Мантия-невидимка",12:"Котёл",13:"Котёл с зельем",14:"Флакон зелья",15:"Книга требований",16:"Журнал обновлений",17:"Тёмная ёлка / четыре герба",18:"Горящая ёлка / Кубок"};
+    prop.textContent = props[screen.number] ? "ПРЕДМЕТ (заглушка): " + props[screen.number] : "";
+    document.getElementById("vnSpeaker").textContent = beat?.speaker || "Рассказчик";
+    document.getElementById("vnText").textContent = beat?.text || "История продолжается...";
+    document.getElementById("vnProgress").textContent = (vnBeatIndex + 1) + " / " + screen.beats.length;
+    document.getElementById("vnNext").textContent = vnBeatIndex < screen.beats.length - 1 ? "Далее ▸" : "Ожидаем следующую сцену…";
+    document.getElementById("vnNext").disabled = vnBeatIndex >= screen.beats.length - 1;
+}
+document.getElementById("vnNext")?.addEventListener("click", () => {
+    if (currentScene?.type !== "visual_novel") return;
+    if (vnBeatIndex < currentScene.screen.beats.length - 1) {
+        vnBeatIndex++;
+        renderVisualNovel(currentScene, true);
+    }
+});
 let treeCurrentRole = null;
 function renderTreeSpell(role) {
     stopSnitchFlight();
@@ -2835,6 +2882,7 @@ socket.on(
         document.getElementById("potionRecipe")?.classList.add("hidden");
         document.getElementById("potionNegativeTest")?.classList.add("hidden");
         document.getElementById("treeSpell")?.classList.add("hidden");
+        document.getElementById("visualNovel")?.classList.add("hidden");
         if (scene.type === "tree_spell") { treeCurrentRole = null; document.getElementById("treeSpellInput").value = ""; }
         if (scene.type === "potion_negative_test") { negativePotionSelectedIds = []; negativePotionOrder = []; }
         if (potionPhaseInterval) { clearInterval(potionPhaseInterval); potionPhaseInterval = null; }
@@ -2871,6 +2919,11 @@ socket.on(
         // Показываем игровой экран
         gameScreen.classList.remove("hidden");
 
+        if (scene.type === "visual_novel") {
+            hideSceneTransition();
+            renderVisualNovel(scene);
+            return;
+        }
         if (scene.type === "tree_spell") {
             hideSceneTransition();
             renderTreeSpell();
