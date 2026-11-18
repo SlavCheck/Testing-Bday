@@ -222,9 +222,14 @@
       <div class="vn-dialogue">
         <div class="vn-speaker" id="vnSpeaker"></div>
         <div class="vn-text" id="vnText"></div>
+        <div id="vnVote" class="vn-vote hidden">
+          <h3>Кто украл Золотой снитч? Выбери подозреваемого — 60 секунд</h3>
+          <div id="vnVoteOptions" class="vn-vote-options"></div>
+          <p id="vnVoteStatus" aria-live="polite"></p>
+        </div>
         <div class="vn-controls">
           <span id="vnProgress"></span>
-          <button id="vnNext" type="button">Далее ▸</button>
+          <div class="vn-nav"><button id="vnPrev" type="button">◂ Назад</button><button id="vnNext" type="button">Далее ▸</button></div>
         </div>
       </div>
     </section>
