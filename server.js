@@ -59,6 +59,7 @@ function normalizeSpell(text) {
 function startTreeSpell(game) {
     game.currentScene = treeSpell;
     game.treeTeams = {};
+    game.treeChat = {};
     for (const [house, phrase] of Object.entries(TREE_SPELLS)) {
         const members = [...game.players.values()].filter(p => p.house === house);
         if (!members.length) continue;
@@ -74,6 +75,7 @@ function startTreeSpell(game) {
         for (const member of members) assignments[member.id] = [];
         shuffled.forEach((part, i) => assignments[targets[i % targets.length].id].push(part));
         game.treeTeams[house] = { captainId: captain.id, assignments, solved: false };
+        game.treeChat[house] = [];
     }
     startSceneTimer(game, treeSpell.duration);
     io.to(`game_${game.id}`).emit("game:started", { scene: treeSpell, timer: game.sceneTimer });
@@ -614,6 +616,7 @@ function sendPlayerState(socket, game, player) {
         potionAnswer: player.potionAnswer || [],
         negativePotionAnswer: player.negativePotionAnswer || [],
         treeRole: game.currentScene?.id === "tree-spell" ? treeRole(game, player) : null,
+        treeChat: game.currentScene?.id === "tree-spell" ? (game.treeChat?.[player.house] || []) : [],
     
         sceneState: player.sceneState,
     
@@ -2389,6 +2392,23 @@ socket.on(
     });
 
     // The recipe's correct IDs are never sent to players during the selection phase.
+    socket.on("tree:chat_send", ({text:message} = {}) => {
+        if (!socket.gameId || typeof message !== "string") return;
+        const game = games.get(socket.gameId);
+        if (!game || game.status !== "playing" || game.currentScene?.id !== "tree-spell") return;
+        const player = [...game.players.values()].find(p => p.socketId === socket.id);
+        const clean = message.trim().slice(0,250);
+        if (!player?.house || !game.treeTeams?.[player.house] || !clean) return;
+        const entry = {nickname:player.nickname,text:clean};
+        const history = game.treeChat[player.house];
+        history.push(entry);
+        if (history.length > 100) history.shift();
+        for (const member of game.players.values()) {
+            if (member.house === player.house && member.socketId)
+                io.to(member.socketId).emit("tree:chat_message",entry);
+        }
+    });
+
     socket.on("tree:submit", ({ phrase } = {}) => {
         if (!socket.gameId || typeof phrase !== "string" || phrase.length > 200) return;
         const game = games.get(socket.gameId);
