@@ -217,11 +217,15 @@
     <section id="visualNovel" class="visual-novel hidden" aria-label="Графическая новелла">
       <div class="vn-background" id="vnBackground"><span id="vnBackgroundLabel"></span></div>
       <div class="vn-top"><span id="vnAct"></span><span id="vnSceneTitle"></span></div>
-      <div class="vn-characters" id="vnCharacters"></div>
       <div class="vn-prop" id="vnProp"></div>
       <div class="vn-dialogue">
-        <div class="vn-speaker" id="vnSpeaker"></div>
-        <div class="vn-text" id="vnText"></div>
+        <div class="vn-dialogue-content">
+          <div class="vn-characters" id="vnCharacters"></div>
+          <div class="vn-dialogue-body">
+            <div class="vn-speaker" id="vnSpeaker"></div>
+            <div class="vn-text" id="vnText"></div>
+          </div>
+        </div>
         <div id="vnVote" class="vn-vote hidden">
           <h3>Кто украл Золотой снитч? Выбери подозреваемого — 60 секунд</h3>
           <div id="vnVoteOptions" class="vn-vote-options"></div>
@@ -420,7 +424,7 @@
 
     <!-- Наш JavaScript -->
 
-    <script src="/js/app.js?v=20261119-bugwarts-emotions"></script>
+    <script src="/js/app.js?v=20261119-speaker-in-dialogue"></script>
 
 </body>
 
