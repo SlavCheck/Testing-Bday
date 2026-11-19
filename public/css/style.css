@@ -3360,3 +3360,14 @@ button:disabled {
 #vnVoteStatus{font:13px system-ui,sans-serif;color:#d6e3ff;margin:9px 0 0}
 .visual-novel:has(.vn-vote:not(.hidden)) .vn-dialogue{max-height:55vh;overflow:auto}
 @media(max-width:620px){.vn-vote-options{grid-template-columns:repeat(2,minmax(0,1fr))}.vn-nav{gap:5px}#vnPrev,#vnNext{padding:10px;font-size:13px}}
+
+/* Bugwarts character art and background photography */
+.vn-background{background-size:cover;background-position:center center;background-repeat:no-repeat}
+.vn-background span:empty{display:none}
+.vn-characters{pointer-events:none;gap:clamp(4px,1vw,18px);padding-bottom:0}
+.vn-character{position:relative;flex:0 1 min(22vw,250px);width:min(22vw,250px);height:min(56vh,540px);min-width:0;border:0;border-radius:0;background:transparent;opacity:.5;filter:brightness(.55) saturate(.65);box-shadow:none;transition:opacity .2s,transform .2s,filter .2s}
+.vn-character img{display:block;width:100%;height:100%;object-fit:contain;object-position:bottom center;filter:drop-shadow(0 8px 14px #0008)}
+.vn-character span{position:absolute;bottom:8px;left:5%;right:5%;padding:5px 7px;border-radius:8px;background:#081426bb;color:#fff;font:600 clamp(10px,1.1vw,14px)/1.2 system-ui,sans-serif;text-shadow:0 1px 3px #000}
+.vn-character.active{opacity:1;filter:brightness(1);transform:translateY(-7px);box-shadow:none}
+.vn-character-fallback{border:1px dashed #8592ad;border-radius:12px;background:#1e2841a8;min-height:110px}
+@media(max-width:620px){.vn-character{flex-basis:24vw;width:24vw;height:min(35vh,280px)}.vn-character span{font-size:9px;bottom:0;padding:3px}.vn-characters{align-items:flex-end}}
