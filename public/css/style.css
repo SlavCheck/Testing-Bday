@@ -3371,3 +3371,19 @@ button:disabled {
 .vn-character.active{opacity:1;filter:brightness(1);transform:translateY(-7px);box-shadow:none}
 .vn-character-fallback{border:1px dashed #8592ad;border-radius:12px;background:#1e2841a8;min-height:110px}
 @media(max-width:620px){.vn-character{flex-basis:24vw;width:24vw;height:min(35vh,280px)}.vn-character span{font-size:9px;bottom:0;padding:3px}.vn-characters{align-items:flex-end}}
+
+/* One speaking character portrait is integrated into the dialogue card. */
+.vn-dialogue-content{display:flex;align-items:stretch;gap:clamp(12px,2vw,26px);min-height:145px}
+.vn-dialogue-body{flex:1;min-width:0;align-self:center}
+.vn-dialogue .vn-characters{position:relative;flex:0 0 clamp(115px,19vw,215px);width:clamp(115px,19vw,215px);height:clamp(145px,26vh,245px);min-height:0;align-self:flex-end;display:flex;align-items:flex-end;justify-content:center;padding:0;gap:0;overflow:hidden}
+.vn-dialogue .vn-character{flex:0 0 100%;width:100%;height:100%;min-width:0;min-height:0;border:0;background:transparent;transform:none!important;opacity:1;filter:none}
+.vn-dialogue .vn-character img{width:100%;height:100%;object-fit:contain;object-position:bottom center}
+.vn-dialogue .vn-characters:empty{display:none}
+.vn-dialogue .vn-speaker{margin-bottom:12px}
+@media(max-width:620px){
+ .vn-dialogue{padding:12px}
+ .vn-dialogue-content{gap:10px;min-height:125px}
+ .vn-dialogue .vn-characters{flex-basis:clamp(80px,28vw,130px);width:clamp(80px,28vw,130px);height:clamp(115px,22vh,175px)}
+ .vn-dialogue .vn-character{width:100%;height:100%}
+ .vn-dialogue .vn-text{font-size:15px}
+}
