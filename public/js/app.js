@@ -2366,6 +2366,40 @@ function stopSnitchFlight() {
 }
 let vnBeatIndex = 0;
 let vnSceneId = null;
+const VN_ASSETS = {
+    characters: {
+        "Альберт Деплоймор": "Albert_Deploymore_tech_new_year.png",
+        "Минерва Баггонагалл": "Minerva_Baggonagall_tech_new_year.png",
+        "Северин Снейпшот": "Severin_Snapeshot_tech_new_year.png",
+        "Гаррет Поттерн": "Garrett_Pattern_tech_new_year.png",
+        "Рональд Рандомли": "Ronald_Randomly_tech_new_year.png",
+        "Гермина Грейдтест": "Hermina_Gradetest_tech_new_year.png",
+        "Драко Малфич": "Draco_Malfeature_tech_new_year.png",
+        "Шляпа Сортировочная 2.0": "Sorting_Hat_tech_new_year.png"
+    },
+    backgrounds: {
+        1: "characters/hall_tech_new_year.png",
+        2: "characters/hall_tech_new_year.png",
+        3: "characters/hall_error_tech_new_year.png",
+        4: "backgrounds/Room_of_snitch_tech_new_year.png",
+        5: "backgrounds/Room_of_snitch_tech_new_year.png",
+        6: "backgrounds/Room_of_snitch_tech_new_year.png",
+        7: "characters/Snitch_catching_hall_tech_new_year.png",
+        8: "characters/hall_error_tech_new_year.png",
+        9: "characters/hall_error_tech_new_year.png",
+        10: "characters/hall_error_tech_new_year.png",
+        11: "backgrounds/requirements_room_tech_new_year.png",
+        12: "backgrounds/potion_laboratory_tech_new_year.png",
+        13: "backgrounds/potion_laboratory_tech_new_year.png",
+        14: "backgrounds/potion_laboratory_tech_new_year.png",
+        15: "backgrounds/potion_laboratory_tech_new_year.png",
+        16: "characters/hall_error_tech_new_year.png",
+        17: "characters/hall_error_tech_new_year.png",
+        18: "backgrounds/hall_tech_fixed_new_year.png"
+    }
+};
+const VN_CHAR_BASE = "/assets/characters/NewYearsCH/";
+const VN_BG_BASE = "/assets/";
 function renderVisualNovel(scene, preserve = false) {
     const screen = scene.screen;
     if (!preserve || vnSceneId !== scene.id) vnBeatIndex = scene.novelVoting ? Math.max(0,screen.beats.length-1) : 0;
@@ -2379,7 +2413,11 @@ function renderVisualNovel(scene, preserve = false) {
     document.getElementById("visualNovel").classList.remove("hidden");
     document.getElementById("vnAct").textContent = "ЭКРАН " + screen.number + " / 18";
     document.getElementById("vnSceneTitle").textContent = screen.title;
-    document.getElementById("vnBackgroundLabel").textContent = "ФОН (заглушка): " + (screen.background || "Багвартс");
+    const background = document.getElementById("vnBackground");
+    const backgroundLabel = document.getElementById("vnBackgroundLabel");
+    const backgroundFile = VN_ASSETS.backgrounds[screen.number];
+    background.style.backgroundImage = backgroundFile ? 'linear-gradient(#07112233, #07112277), url("' + VN_BG_BASE + (backgroundFile.startsWith("characters/") ? "characters/NewYearsCH/" + backgroundFile.slice(11) : "backgrounds/NewYearBG/" + backgroundFile.slice(12)) + '")' : "";
+    backgroundLabel.textContent = backgroundFile ? "" : "ФОН: " + (screen.background || "Багвартс");
     const characters = document.getElementById("vnCharacters");
     characters.replaceChildren();
     const beat = screen.beats[vnBeatIndex];
@@ -2388,7 +2426,20 @@ function renderVisualNovel(scene, preserve = false) {
     for (const name of speakers) {
         const character = document.createElement("div");
         character.className = "vn-character" + (name === active ? " active" : "");
-        character.textContent = "ПЕРСОНАЖ\n" + name;
+        const filename = VN_ASSETS.characters[name];
+        if (filename) {
+            const img = document.createElement("img");
+            img.src = VN_CHAR_BASE + filename;
+            img.alt = name;
+            img.loading = "eager";
+            img.onerror = () => { img.remove(); character.classList.add("vn-character-fallback"); };
+            character.appendChild(img);
+        } else {
+            character.classList.add("vn-character-fallback");
+        }
+        const label = document.createElement("span");
+        label.textContent = name;
+        character.appendChild(label);
         characters.appendChild(character);
     }
     const prop = document.getElementById("vnProp");
