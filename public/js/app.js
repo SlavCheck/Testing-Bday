@@ -2398,6 +2398,49 @@ const VN_ASSETS = {
         18: "backgrounds/hall_tech_fixed_new_year.png"
     }
 };
+// Alternate portraits are chosen per dialogue beat; neutral art remains the fallback.
+const VN_EXPRESSIONS = {
+    "Альберт Деплоймор": {
+        talking: "Albert_Deploymore_tech_new_year_just_talking.png",
+        event: "Albert_Deploymore_tech_new_year_event_talking.png",
+        guilty: "Albert_Deploymore_tech_new_year_guilty_smile.png",
+        panic: "Albert_Deploymore_tech_new_year_panic.png"
+    },
+    "Минерва Баггонагалл": {
+        indignation: "Minerva_Baggonagall_tech_new_year_indignation.png",
+        strict: "Minerva_Baggonagall_tech_new_year_strict.png",
+        approval: "Minerva_Baggonagall_tech_new_year_strict_approval.png"
+    },
+    "Северин Снейпшот": {
+        pride: "Severin_Snapeshot_tech_new_year_Hidden_pride.png",
+        irritation: "Severin_Snapeshot_tech_new_year_irritation.png",
+        sarcasm: "Severin_Snapeshot_tech_new_year_sarcasm.png"
+    }
+};
+function novelPortrait(name, screenNumber, beatIndex, active) {
+    const neutral = VN_ASSETS.characters[name];
+    if (!active || !VN_EXPRESSIONS[name]) return neutral;
+    const mood = VN_EXPRESSIONS[name];
+    const key = screenNumber + ":" + beatIndex;
+    if (name === "Альберт Деплоймор") {
+        if (["3:6","3:14","3:16","4:3","4:6","7:9","7:10","7:12","9:7","9:10","11:7","11:9","14:2","14:4","16:5","16:7","16:18","16:20","16:22","16:24","16:26"].includes(key)) return mood.guilty;
+        if (["3:10","3:11","3:12","3:17","4:5","6:0","7:7","7:13","9:4","9:11","14:0","16:0","16:3"].includes(key)) return mood.panic;
+        if ([1,3,6,7,9,11,13,16,17,18].includes(screenNumber) && (beatIndex === 0 || [3,6,7,16,17,18].includes(screenNumber) && beatIndex < 3)) return mood.event;
+        return mood.talking;
+    }
+    if (name === "Минерва Баггонагалл") {
+        if (["3:7","3:13","3:15","4:1","4:6","6:7","7:11","7:13","9:6","9:9","16:19","16:25"].includes(key)) return mood.indignation;
+        if (["3:1","4:0","4:2","4:8","4:9","5:12","5:13","6:10","8:2","11:0","14:6","16:1","16:6","16:33"].includes(key)) return mood.strict;
+        if ([17,18].includes(screenNumber)) return mood.approval;
+        return mood.strict;
+    }
+    if (name === "Северин Снейпшот") {
+        if (["13:5","13:6","15:3","17:21","18:7"].includes(key)) return mood.pride;
+        if (["9:8","9:12","12:1","12:3","12:7","13:7","14:1","14:3","16:23","16:28","17:21"].includes(key)) return mood.irritation;
+        return mood.sarcasm;
+    }
+    return neutral;
+}
 const VN_CHAR_BASE = "/assets/characters/NewYearsCH/";
 const VN_BG_BASE = "/assets/";
 function renderVisualNovel(scene, preserve = false) {
@@ -2426,7 +2469,7 @@ function renderVisualNovel(scene, preserve = false) {
     for (const name of speakers) {
         const character = document.createElement("div");
         character.className = "vn-character" + (name === active ? " active" : "");
-        const filename = VN_ASSETS.characters[name];
+        const filename = novelPortrait(name, screen.number, vnBeatIndex, name === active);
         if (filename) {
             const img = document.createElement("img");
             img.src = VN_CHAR_BASE + filename;
