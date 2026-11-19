@@ -2465,24 +2465,17 @@ function renderVisualNovel(scene, preserve = false) {
     characters.replaceChildren();
     const beat = screen.beats[vnBeatIndex];
     const active = beat?.speaker || "";
-    const speakers = new Set([...(screen.characters || []), ...screen.beats.filter(b => b.speaker !== "Система" && b.speaker !== "Событие" && b.speaker !== "Рассказчик").map(b=>b.speaker)]);
-    for (const name of speakers) {
+    // The dialogue panel shows only the current speaker; narration has no portrait.
+    const filename = novelPortrait(active, screen.number, vnBeatIndex, true);
+    if (filename) {
         const character = document.createElement("div");
-        character.className = "vn-character" + (name === active ? " active" : "");
-        const filename = novelPortrait(name, screen.number, vnBeatIndex, name === active);
-        if (filename) {
-            const img = document.createElement("img");
-            img.src = VN_CHAR_BASE + filename;
-            img.alt = name;
-            img.loading = "eager";
-            img.onerror = () => { img.remove(); character.classList.add("vn-character-fallback"); };
-            character.appendChild(img);
-        } else {
-            character.classList.add("vn-character-fallback");
-        }
-        const label = document.createElement("span");
-        label.textContent = name;
-        character.appendChild(label);
+        character.className = "vn-character active";
+        const img = document.createElement("img");
+        img.src = VN_CHAR_BASE + filename;
+        img.alt = active;
+        img.loading = "eager";
+        img.onerror = () => { character.remove(); };
+        character.appendChild(img);
         characters.appendChild(character);
     }
     const prop = document.getElementById("vnProp");
