@@ -264,6 +264,12 @@ const HOUSE_NAMES = {
     ravenclaw: "🦅 Кодтевран",
     hufflepuff: "🦡 Пуффентест"
 };
+const HOUSE_MOTTOS = {
+    gryffindor: "Твой девиз «Кто не рискует, тот не деплоит!»",
+    ravenclaw: "Твой девиз «Знание — сила, автоматизация — магия!»",
+    hufflepuff: "Твой девиз «Терпение и труд все баги найдут!»",
+    slytherin: "Твой девиз «Это не баг. Это фича!»"
+};
 const CLASSIC_TEAM_NAMES = {
     strategist: "📋 Стратеги",
     joker: "🎭 Шутники",
@@ -273,6 +279,9 @@ function showAssignedGroup(house, team, gameType) {
     const isClassic = gameType === "classic" || (!house && team in CLASSIC_TEAM_NAMES);
     const heading = document.getElementById("assignmentHeading");
     if (heading) heading.textContent = isClassic ? "Твоя команда определена!" : "Твой факультет определён!";
+    const motto = document.getElementById("houseMotto");
+    if (motto) motto.textContent = isClassic ? "" : (HOUSE_MOTTOS[house] || "Ожидаем распределения...");
+    waitingScreen?.classList.toggle("bugwarts-classic-waiting", isClassic);
     if (selectedTeamText) selectedTeamText.textContent = isClassic
         ? `Твоя команда: ${CLASSIC_TEAM_NAMES[team] || team || "Не определена"}`
         : `Твой факультет: ${HOUSE_NAMES[house] || house || "Не определён"}`;
