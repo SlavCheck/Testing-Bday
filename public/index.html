@@ -39,10 +39,15 @@
         <section id="joinScreen">
 
             <h1>Багвартс: Новогодний релиз</h1>
-            <div class="vn-join-placeholder">ФОН (заглушка): Большой зал Багвартса</div>
-            <div class="vn-hat-placeholder">🎩<span>ПЕРСОНАЖ / ПРЕДМЕТ (заглушка): Шляпа Сортировочная 2.0</span></div>
-
-            <p>Дорогие студенты! Сегодня мы собрались, чтобы отпраздновать Новый год. Но этот год особенный: нас ждёт Багвартс: Новогодний релиз! Каждый факультет должен проявить свои навыки тестирования магии</p>
+            <div class="bugwarts-entry-scene" aria-label="Приветствие в Багвартсе">
+                <div class="bugwarts-entry-dialogue">
+                    <img class="bugwarts-entry-portrait" src="/assets/characters/NewYearsCH/Albert_Deploymore_tech_new_year_event_talking.png" alt="Альберт Деплоймор">
+                    <div class="bugwarts-entry-copy">
+                        <strong>Альберт Деплоймор</strong>
+                        <p>Добро пожаловать в Багвартс! Сегодня мы запускаем самый важный релиз года — Новогодняя магия 2.0.27! И впервые за его качество отвечают четыре факультета! Прошу всех занять свои места!</p>
+                    </div>
+                </div>
+            </div>
 
             <audio
                 id="welcomeVoice"
@@ -116,17 +121,18 @@
     class="hidden"
 >
 
-    <h1 id="assignmentHeading">Твой факультет определён!</h1>
-
-    <p id="selectedTeamText"></p>
-
-
-    <p>
-        Ждём запуска игры администратором...
-    </p>
-
-    <div class="loader">
-        ✦
+    <div class="bugwarts-waiting-scene">
+        <h1 id="assignmentHeading">Твой факультет определён!</h1>
+        <p id="selectedTeamText"></p>
+        <div class="bugwarts-entry-dialogue">
+            <img class="bugwarts-entry-portrait" src="/assets/characters/NewYearsCH/Sorting_Hat_tech_new_year.png" alt="Шляпа Сортировочная 2.0">
+            <div class="bugwarts-entry-copy">
+                <strong>Шляпа Сортировочная 2.0</strong>
+                <p id="houseMotto"></p>
+            </div>
+        </div>
+        <p class="bugwarts-waiting-message">Ждём запуска игры администратором...</p>
+        <div class="loader" aria-hidden="true">✦</div>
     </div>
 
 </section>
