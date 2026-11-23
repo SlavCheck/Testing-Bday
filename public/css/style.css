@@ -3387,3 +3387,20 @@ button:disabled {
  .vn-dialogue .vn-character{width:100%;height:100%}
  .vn-dialogue .vn-text{font-size:15px}
 }
+
+/* Bugwarts welcome and pre-game waiting screens */
+#joinScreen,#waitingScreen{position:relative;isolation:isolate;overflow:hidden;min-height:min(760px,90vh);border-radius:16px;padding:clamp(18px,3vw,40px);background:#0b1628;color:#fff}
+#joinScreen::before,#waitingScreen::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,#06101bbb,#071321cc),url("/assets/backgrounds/NewYearBG/hall_tech_new_year.png") center/cover no-repeat}
+#joinScreen>h1,#waitingScreen h1{position:relative;text-shadow:0 2px 12px #000}
+.bugwarts-entry-scene{max-width:1000px;margin:clamp(18px,5vh,65px) auto 22px}
+.bugwarts-entry-dialogue{display:flex;align-items:center;gap:clamp(12px,2vw,26px);max-width:1000px;margin:18px auto;padding:16px 22px;border:2px solid #c7a566;border-radius:15px;background:#091224ed;box-shadow:0 12px 45px #0009;text-align:left}
+.bugwarts-entry-portrait{flex:0 0 clamp(105px,20vw,220px);width:clamp(105px,20vw,220px);height:clamp(165px,32vh,300px);object-fit:contain;object-position:bottom center;filter:drop-shadow(0 6px 10px #0008)}
+.bugwarts-entry-copy{flex:1;min-width:0;font-size:clamp(16px,2vw,23px);line-height:1.5}
+.bugwarts-entry-copy strong{display:block;color:#f5d18a;margin-bottom:10px;font-size:clamp(18px,2.2vw,24px)}
+.bugwarts-entry-copy p{margin:0}
+#joinScreen #nickname{display:block;max-width:430px;width:100%;margin:18px auto 12px}
+#joinScreen #joinButton{display:block;margin:0 auto}
+.bugwarts-waiting-scene{max-width:1000px;margin:auto;text-align:center}
+.bugwarts-waiting-message{font-size:clamp(16px,2vw,21px);margin-top:22px}
+#waitingScreen.bugwarts-classic-waiting .bugwarts-entry-dialogue{display:none}
+@media(max-width:620px){#joinScreen,#waitingScreen{padding:14px;min-height:85vh}.bugwarts-entry-dialogue{padding:12px;gap:10px}.bugwarts-entry-portrait{flex-basis:clamp(80px,28vw,120px);width:clamp(80px,28vw,120px);height:clamp(130px,24vh,190px)}.bugwarts-entry-copy{font-size:15px}.bugwarts-entry-copy strong{font-size:16px}}
