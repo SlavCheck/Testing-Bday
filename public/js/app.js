@@ -2378,23 +2378,23 @@ const VN_ASSETS = {
         "Шляпа Сортировочная 2.0": "Sorting_Hat_tech_new_year.png"
     },
     backgrounds: {
-        1: "characters/hall_tech_new_year.png",
-        2: "characters/hall_tech_new_year.png",
-        3: "characters/hall_error_tech_new_year.png",
+        1: "backgrounds/hall_tech_new_year.png",
+        2: "backgrounds/hall_tech_new_year.png",
+        3: "backgrounds/hall_error_tech_new_year.png",
         4: "backgrounds/Room_of_snitch_tech_new_year.png",
         5: "backgrounds/Room_of_snitch_tech_new_year.png",
         6: "backgrounds/Room_of_snitch_tech_new_year.png",
-        7: "characters/Snitch_catching_hall_tech_new_year.png",
-        8: "characters/hall_error_tech_new_year.png",
-        9: "characters/hall_error_tech_new_year.png",
-        10: "characters/hall_error_tech_new_year.png",
+        7: "backgrounds/Snitch_catching_hall_tech_new_year.png",
+        8: "backgrounds/hall_error_tech_new_year.png",
+        9: "backgrounds/hall_error_tech_new_year.png",
+        10: "backgrounds/hall_error_tech_new_year.png",
         11: "backgrounds/requirements_room_tech_new_year.png",
         12: "backgrounds/potion_laboratory_tech_new_year.png",
         13: "backgrounds/potion_laboratory_tech_new_year.png",
         14: "backgrounds/potion_laboratory_tech_new_year.png",
         15: "backgrounds/potion_laboratory_tech_new_year.png",
-        16: "characters/hall_error_tech_new_year.png",
-        17: "characters/hall_error_tech_new_year.png",
+        16: "backgrounds/hall_error_tech_new_year.png",
+        17: "backgrounds/hall_error_tech_new_year.png",
         18: "backgrounds/hall_tech_fixed_new_year.png"
     }
 };
